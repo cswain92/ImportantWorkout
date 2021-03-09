@@ -1,0 +1,23 @@
+  <mat-menu #new="matMenu" class="custom-list">
+                                        <ng-container *ngFor="let type of eventType_">
+                                            <button
+                                                *ngIf="type.name.toLowerCase() == 'sale' || type.name.toLowerCase() == 'rental' || type.name.toLowerCase() == 'knowledge'"
+                                                mat-menu-item
+                                                (click)="routeToCreate(type.eventtype_id,type)">{{type.name}}</button>
+                                        </ng-container>
+                                        <button mat-menu-item (click)="goToAmalgamation()">Amalgamation</button>
+                                        <button mat-menu-item (click)="goToSubDivision()">Subdivision</button>
+                                        <!-- <button mat-flat-button color="warn" (click)="cloneProperty()"
+                                                                                                                                        class="sm-btn mt-2 btn-block">Clone
+                                                                                                                                        Property</button> -->
+                                    </mat-menu>
+                                    
+                                    
+                                    
+                                    
+                                    
+  eventType_: Array<any> = [];
+
+  @Input() set eventType(eventList: Array<any>) {
+    this.eventType_ = eventList;
+  }
