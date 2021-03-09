@@ -1,0 +1,236 @@
+    <li style="padding-top: 10px;border-bottom: #ccc solid 1px;">
+                                <div class="row" style="width: 100%;">
+                                    <div class="col-sm-12 col-md-6">
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Record Showing Date</mat-label>
+                                            <input matInput [matDatepicker]="picker"
+                                                (focus)="picker.open()" formControlName="recordShowingDate" appearance="outline"
+                                                autocomplete="recordShowingDate" (ngModelChange)="selectDate($event,false,i)" placeholder="MM/DD/YYYY">
+                                            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                                            <mat-datepicker #picker></mat-datepicker>
+                                            <mat-error
+                                                *ngIf="RecordShowingDetails.controls[i].get('recordShowingDate').hasError('required')">
+                                                Record Showing Date is <strong>required</strong>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                    <div class="col-sm-12 col-md-6">
+                                        <mat-form-field appearance="outline">
+                                            <mat-label>Comment</mat-label>
+                                            <textarea matInput placeholder="Comment" formControlName="comments"></textarea>
+                                            <mat-error
+                                               *ngIf="RecordShowingDetails.controls[i].get('comments').hasError('required')">
+                                                Comment is <strong>required</strong>
+                                            </mat-error>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                            </li>
+                            
+                            <!-- END OF HTML FILE--->
+                            
+                            <!-- START OF TS FILE--->
+                            
+                            import { Component, OnInit, Inject, OnDestroy } from '@angular/core';
+import { TabService } from '../../../../../_shared/service/tab.service';
+import { Router } from '@angular/router';
+import { Location } from '@angular/common';
+import { FormBuilder, FormGroup, FormControl, Validators, FormArray } from '@angular/forms';
+
+import { Store } from '@ngrx/store';
+import { AppState } from '../../../../../_shared/store/models/app-state.model';
+import { addRecordShowing } from '../../../../../_shared/store/actions/enquirydetail.actions';
+
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+import { ActivatedRoute } from '@angular/router';
+
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+import { GlobalService } from '../../../../../_shared/service/global.service';
+
+import { DropDownSortingService } from '../../../../../_shared/service/drop-down-sorting.service';
+
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+
+import * as moment from 'moment';
+
+// declare const Buffer
+
+
+@Component({
+  selector: 'app-record-showing-form',
+  templateUrl: './record-showing-form.component.html',
+  styleUrls: ['./record-showing-form.component.scss','../../../../../../assets/css/properties.scss']
+})
+export class CreateRecordShowingFormComponent implements OnInit {
+  recordShowingDate: any = [];
+
+  pagetitle = 'Showing Properties';
+
+  introduce_property_event_selects: any = [];
+
+  createRecordShowingForm: FormGroup;
+
+  private sub: any
+  loadingState: boolean = false;
+  loadingStateAddListing: boolean = false;
+  private ngUnsubscribe = new Subject();
+
+  constructor(private fb :FormBuilder, public tabService: TabService, public router: Router, public location: Location, private store: Store<AppState>, private _snackbar: MatSnackBar, private activatedRoute: ActivatedRoute, private global: GlobalService, private dropDownSort: DropDownSortingService, public dialogRef: MatDialogRef<CreateRecordShowingFormComponent>, @Inject(MAT_DIALOG_DATA) public data: any) { }
+  hitEnterCallback = () => { this.hitEnter(event) }
+  hitEnter(event: any) {
+    if (event.keyCode == 13) {
+      this.submitForm();
+    }
+  }
+
+  ngOnInit() {
+
+    document.addEventListener('keypress', this.hitEnterCallback);
+    console.log(this.data)
+ 
+    this.introduce_property_event_selects =  this.data.introduce_property_event_selects;
+
+    this.createForm({});
+
+
+    this.store
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((state: any) => {
+        this.sub = this.activatedRoute.params
+          .subscribe((params: any) => {
+
+            if (state.enquirydetail.success && state.enquirydetail.successType == "RECORDSHOWING_ADD_SUCCESS") {
+
+              if (state.enquirydetail.cannotBeAddedMessage.length == 0) {
+                
+                this._snackbar.open("Record showing has been successful", 'close', {
+                  duration: 2000
+                });
+
+                this.closeModal();
+              } else {
+                this._snackbar.open(state.enquirydetail.cannotBeAddedMessage, 'close', {
+                  duration: 2000
+                });
+              }
+
+            }
+
+          })
+        if (state.enquirydetail.error) {
+          this._snackbar.open(state.enquirydetail.errorText, 'close', { duration: 2000 });
+        }
+        this.loadingState = state.enquirydetail.loading;
+      })
+
+  }
+
+  get RecordShowingDetails()
+  {
+      return this.createRecordShowingForm ? this.createRecordShowingForm.get('RecordShowingDetails') as FormArray : null;
+  }
+
+  createForm(value: any) {
+
+    let arr=[];    
+    for(let i=0;i< this.introduce_property_event_selects.length;i++)    
+    {       
+      arr.push(this.BuildFormDynamic(this.introduce_property_event_selects[i]))       
+    }    
+
+    this.createRecordShowingForm =  this.fb.group({      
+      RecordShowingDetails:this.fb.array(arr)    
+    })
+  }
+
+  BuildFormDynamic(bookmark_poperty):FormGroup{    
+    return this.fb.group({    
+          poperty:[bookmark_poperty], 
+          recordShowingDate: ['', Validators.required],   
+          comments:['', Validators.required],   
+          event :[bookmark_poperty.eventId]    
+    })    
+  } 
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+    document.removeEventListener('keypress', this.hitEnterCallback);
+  }
+
+  back() {
+    this.location.back();
+  }
+  selectDate(event: any, firstTime: boolean, i:number) {
+    const momentDate = new Date(event); // Replace event.value with your date value
+    const formattedDate = moment(momentDate).format("YYYY-MM-DD");
+    if (formattedDate.toLowerCase() !== 'invalid date') {
+      this.recordShowingDate[i] = formattedDate;
+    }
+  }
+
+  submitForm() {
+
+    this.createRecordShowingForm.markAllAsTouched();
+
+    let formData = [];
+
+    this.createRecordShowingForm.value.RecordShowingDetails.forEach((v: any, i: any) => {
+
+      // const momentDate = new Date();
+      // let formattedDate = moment(momentDate).format("YYYY-MM-DD");
+
+      let object = {
+        comments: v.comments,
+        shown_date: this.recordShowingDate[i],
+        event: v.event,
+        enquirydetail: this.data.enquirydetail_id,
+        introduceproperty: this.introduce_property_event_selects[i].introduceproperty_id,
+      }
+      formData.push(object);
+    });
+
+    let self = this;  
+    if (self.createRecordShowingForm.valid) {
+      self.loadingState = true;
+      console.log(formData);
+     // self.store.dispatch(new addRecordShowing(formData));
+    }
+    
+  }  
+
+  public noWhitespaceValidator(control: FormControl) {
+    let isWhitespace = false;
+    let isValid;
+    if (control.value.length) {
+      isWhitespace = (control.value || '').match(/^\s*$/g);
+    }
+    isValid = !isWhitespace;
+    return isValid ? null : { 'whitespace': true };
+  }
+
+  keyDown(event: any) {
+    if (event.keyCode == 13) {
+      this.submitForm();
+    }
+  }
+
+  closeModal() {
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+    this.dialogRef.close(({ status: 'close' }))
+    this.global.setGlobalLaoder(false);
+  }
+
+  onImageClick(eventId: any, event: any) {
+    event.preventDefault();
+    this.router.navigate(['edit-property/' + eventId])
+  }
+
+}
+
+
