@@ -1,0 +1,13 @@
+<button mat-flat-button color="white" (click)="gotoTop()" class="btn-block d-none d-xl-flex">
+		<i class="icon-top-arrow"></i>Back to Top
+	</button>
+  
+  
+  
+   gotoTop() {
+    window.scroll({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }
