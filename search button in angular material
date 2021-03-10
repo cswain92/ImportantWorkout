@@ -1,0 +1,23 @@
+<div class="list-searech">
+	<mat-form-field appearance="outline" class="no-label">
+		<i class="icon-searcher1" matPrefix></i>
+		<input matInput type="search" placeholder="Search..." (ngModelChange)="searchParamsEmitKeyDown($event)" [(ngModel)]="search">
+		<button mat-flat-button matSuffix color="warn" aria-label="Clear" (click)="localSearch(search)" *ngIf="search">
+			Search
+		</button>
+	</mat-form-field>
+</div>
+
+
+@Output() resetSearchValue: EventEmitter<any> = new EventEmitter();
+ @Output() localSearchEmitter: EventEmitter<any> = new EventEmitter();
+
+ searchParamsEmitKeyDown($event) {
+    if ($event.length == 0) {
+        this.resetSearchValue.emit('')
+    }
+}
+
+ localSearch(event:any){
+    this.localSearchEmitter.emit(event);
+  }
