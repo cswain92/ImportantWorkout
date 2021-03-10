@@ -1,0 +1,4 @@
+ <ng-container *ngFor="let zoning of item.zoning; let i = index">
+                                                    <span *ngIf="zoning.hasOwnProperty('zone_name')"> {{zoning.zone_name}}</span>
+                                                    <span *ngIf="i !== (item.zoning.length-1)">,</span>
+                                                </ng-container>  
