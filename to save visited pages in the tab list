@@ -1,0 +1,51 @@
+import { Injectable } from '@angular/core';
+
+@Injectable({
+    providedIn: 'root'
+})
+export class TabService {
+
+    public tabs: any[] = [];
+    public menu: any;
+
+    constructor() { }
+
+    addTab(title: string, url: string, label: string = '', queryParams: any = false) {
+        let labelShow = ((label == '') ? title : label);
+        this.menu = { 'title': title, 'url': url, 'label': labelShow, 'queryParams': queryParams };
+        if (label) {
+            var index = this.tabs.findIndex(x => x.label == this.menu.label);
+        }
+        else {
+            var index = this.tabs.findIndex(x => x.url == this.menu.url);
+        }
+        // here you can check specific property for an object whether it exist in your array or not
+        if (index === -1) {
+            this.tabs.push(this.menu);
+            localStorage.setItem('tabs', JSON.stringify(this.tabs));
+        } else {
+            this.tabs.splice(index, 1);
+            this.tabs.push(this.menu);
+            localStorage.setItem('tabs', JSON.stringify(this.tabs));
+            //this.tabs[index] = this.menu;
+        }
+
+    }
+
+    deleteTab(title: any, url: string) {
+        this.menu = { 'title': title, 'url': url };
+        var index = this.tabs.findIndex(x => x.url == this.menu.url);
+        this.tabs.splice(index, 1);
+        localStorage.setItem('tabs', JSON.stringify(this.tabs));
+    }
+
+}
+
+
+
+
+
+used in the component.ts file
+.............................
+ addTab() {
+        this.tabService.addTab('Create Email Template ', this.router.url, 'Create Email Template');
