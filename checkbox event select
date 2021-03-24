@@ -1,0 +1,56 @@
+<div class="box">
+					<div class="box-heading-feel">
+						<div class="row">
+							<div class="col">Introduced Properties</div>
+							<div class="col-auto d-flex align-items-center">
+								<!--<button mat-flat-button color="warn" class="small-btn">Offers</button>-->
+								<button mat-flat-button color="warn" class="small-btn" (click)="addRecordShowing()">Record Showing</button>
+								<button mat-flat-button color="warn" class="box-btn small-btn" (click)="deleteIntroduceProperty($event)">
+									<i class="icon-box-del"></i> 
+								</button>
+							</div>
+						</div>
+					</div>
+					<div class="table-value">
+						<table class="form">
+							<tr>
+								<th class="check-box">
+									<!--<mat-checkbox color="warn" ></mat-checkbox>-->
+								</th>
+								<th>Property Name</th>
+								<th>Address</th>
+								<th>Date Introduced</th>
+								<th>Comments</th>
+							</tr>
+							<tr *ngFor="let item of IntroduceProperties">
+								<td class="check-box">
+									<mat-checkbox color="warn" (change)="dataIntroducePropertySelect($event,item)"
+									[checked]="item.isSelected"></mat-checkbox>
+								</td>
+								<td  data-label="Name">{{item.property_name}}</td>
+								<td  data-label="Address">{{item.address}}</td>
+								<td  data-label="Introduced Dt.">{{item.introduce_date}}</td>
+								<td  data-label="Comments">{{item.comments}}</td>
+							</tr>
+							<tr *ngIf="IntroduceProperties.length==0"><td colspan="5">No Property has been introduced.</td></tr>
+						</table>
+					</div>
+				</div>
+        
+            introduce_property_event_selects: any = [];
+  dataIntroducePropertySelect($event: any, item: any) {
+    let object = { checked: $event.checked, item }
+    if(object.checked)
+    {
+      this.introduce_property_event_selects.push(object.item.each_property);
+    }
+    else
+    {
+      this.introduce_property_event_selects.forEach((v: any, i: any) => {
+          if(v.eventId==object.item.each_property.eventId)
+          {
+            this.introduce_property_event_selects.splice(i, 1);
+          }
+      });
+    }
+  }
