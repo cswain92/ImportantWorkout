@@ -1,0 +1,9 @@
+  public noWhitespaceValidator(control: FormControl) {
+    let isWhitespace = false;
+    let isValid;
+    if (control.value.length) {
+      isWhitespace = (control.value || '').match(/^\s*$/g);
+    }
+    isValid = !isWhitespace;
+    return isValid ? null : { 'whitespace': true };
+  }
