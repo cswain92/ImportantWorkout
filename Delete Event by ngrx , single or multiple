@@ -1,0 +1,42 @@
+<button mat-flat-button color="warn" class="box-btn small-btn" (click)="deleteIntroduceProperty($event)">
+									<i class="icon-box-del"></i> 
+								</button>
+                
+                
+deleteIntroduceProperty(event: any) {
+    console.log(this.introduce_property_event_selects)
+
+    if(this.introduce_property_event_selects.length>0)
+    {
+
+      let dialogRef: MatDialogRef<any>;
+
+      dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to delete it ?', showConfirmation: true } });
+
+      dialogRef.afterClosed()
+      .subscribe((result) => {
+            if (result.status) 
+            {
+              let f_id: string = ''
+              this.introduce_property_event_selects.forEach((f: any, i: any) => {
+                  if (i !== this.introduce_property_event_selects.length - 1) {
+                      f_id += f.introduceproperty_id + ','
+                  } else {
+                      f_id += f.introduceproperty_id
+                  }
+              })
+              console.log(f_id)
+              this.introduce_property_event_selects = [];
+              this.global.setGlobalRouterLaoder(true);
+              this.store.dispatch(new deleteIntroduceProperty(f_id))
+
+            }
+      });
+    }
+    else{
+      this._snackbar.open('!Error please select any propery from introduce poperties  section.', 'close', {
+        duration: 3000
+      });
+    }
+
+  }
