@@ -1,0 +1,42 @@
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class DropDownSortingService {
+
+  constructor() { }
+  nameWithNumberArray: Array<any> = [];
+  sort(arrayName: Array<any>, propertyName: string) {
+    this.nameWithNumberArray = [];
+    if (arrayName.length > 0) {
+      arrayName.forEach((a: any, i: any) => {
+        if (a.hasOwnProperty('' + propertyName + '')) {
+          if (a['' + propertyName + ''].toLowerCase()[0] !== undefined && !a['' + propertyName + ''].toLowerCase()[0].match(/^[A-Za-z]+$/)) {
+            this.nameWithNumberArray.push(a);
+            arrayName = arrayName.filter((e: any, index: any) => {
+              return index !== arrayName.indexOf(a);
+            })
+          }
+        }
+      })
+      arrayName.sort((a, b) => {
+        if (a.hasOwnProperty('' + propertyName + '')) {
+          if (a['' + propertyName + ''].toLowerCase() < b['' + propertyName + ''].toLowerCase()) { return -1; }
+          if (a['' + propertyName + ''].toLowerCase() > b['' + propertyName + ''].toLowerCase()) { return 1; }
+          return 0;
+        } else {
+          return 1;
+        }
+      })
+    }
+    if (this.nameWithNumberArray.length > 0) {
+      this.nameWithNumberArray.forEach((n: any) => {
+        arrayName.push(n);
+      })
+    }
+    return arrayName;
+  }
+
+
+}
