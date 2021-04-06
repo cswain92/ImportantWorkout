@@ -1,0 +1,645 @@
+<div class="content-tab" *ngIf="customPageChangeDropDown">
+    <form>
+        <mat-form-field appearance="outline" class="no-label">
+            <mat-select [(value)]="selectedCustomPageDropDown" (selectionChange)="navigateTo($event.value)">
+                <mat-option *ngFor="let custompagedropdown of customPageDropDownDataArray" value="{{custompagedropdown.routeUrl}}">{{ custompagedropdown.value }}</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </form>
+</div>
+
+<div class="content-tab" *ngIf="statusChangeDropDown">
+    <form [formGroup]="filterEmployeeForm">
+        <mat-form-field appearance="outline" class="no-label">
+            <mat-select [(value)]="selected" (selectionChange)="emitFilter($event)"
+                formControlName="filterEmployeeControl" placeholder="Select {{moduleName}} Type">
+                <mat-option value="all"> ALL {{moduleName | uppercase}} </mat-option>
+                <ng-container *ngIf="!hasCustomStatus">
+                    <mat-option value="Active">ACTIVE {{moduleName | uppercase}}</mat-option>
+                    <mat-option value="Inactive">INACTIVE {{moduleName | uppercase}} </mat-option>
+                </ng-container>
+                <ng-container *ngIf="hasCustomStatus">
+                    <mat-option *ngFor="let customStatus of CustomStatusArray" value="{{customStatus}}">{{ customStatus | uppercase }} {{moduleName | uppercase}} </mat-option>
+                </ng-container>
+
+            </mat-select>
+        </mat-form-field>
+    </form>   
+</div>
+<div class="content-tab ml-2" *ngIf="inFlyerModule">
+    <form  [formGroup]="flyerTypeForm">
+        <mat-form-field appearance="outline" class="no-label">
+            <mat-select [(value)]="selectedFlyerTypeID"
+                formControlName="flyerTypeControl" (selectionChange)="getFlyer()" placeholder="Select Event type">
+                <mat-option value="brokerage"> Brokerage </mat-option>
+                <mat-option value="advisory"> Advisory </mat-option>
+                <mat-option value="advisory_request"> Advisory Request </mat-option>
+            </mat-select>
+        </mat-form-field>       
+    </form>
+</div>
+<div class="content-tab ml-2" *ngIf="inFlyerModule">
+    <form  [formGroup]="businessUnitIDForm">
+        <mat-form-field appearance="outline" class="no-label">
+            <mat-select [(value)]="selectedUnitId" (selectionChange)="getFlyer('franchiseeChange')"
+                formControlName="businessUnitControl" placeholder="Select business unit id">
+                <mat-option [value]="unitID.businessunit_id" *ngFor="let unitID of businessUnitList_"> {{unitID.franchisename}} </mat-option>                    
+            </mat-select>
+        </mat-form-field>      
+    </form>
+</div>
+<div class="content-tab ml-2" *ngIf="inFlyerModule">
+    <form  [formGroup]="marketingBrandForm">
+        <mat-form-field appearance="outline" class="no-label">
+            <mat-select [(value)]="selectedMarketingBrandId" (selectionChange)="getFlyer()"
+                formControlName="brandControl" placeholder="Select brand id">
+                <mat-option [value]="unitID.marketingbrand_id" *ngFor="let unitID of marketingBrandOnFranchisee_"> {{unitID.name}} </mat-option>                    
+            </mat-select>
+        </mat-form-field>      
+    </form>
+</div>
+    
+<div class="filter">
+    <div class="list-searech" *ngIf="showSearch">
+        <mat-form-field appearance="outline" class="no-label">
+            <i class="icon-searcher1" matPrefix></i>
+            <input matInput (keydown)="searchParamsEmitKeyDown($event)" id="dataTableSearchInput__unique__" type="search" placeholder="Search..."
+                [(ngModel)]="value" (ngModelChange)="searchFilterChange()" autocomplete="off">
+            <button mat-flat-button matSuffix color="warn" aria-label="Clear" (click)="searchParamsEmit(value)"
+                *ngIf="value">
+                Search
+            </button>
+        </mat-form-field>
+    </div>
+    <div class="list-btn">
+        <button mat-stroked-button matTooltip="Filter" color="accent" class="sm-btn" (click)="FilterBox = !FilterBox;" *ngIf="showFilter">
+            <i class="icon-funnel"></i>
+            Filter
+        </button>
+        <button mat-stroked-button matTooltip="Manage Columns" *ngIf="showColumn" #ManageColumnActions (click)="openMenu()" color="accent"
+            class="sm-btn" [matMenuTriggerFor]="columns">
+            <i class="icon-layout"></i>Column
+        </button>
+        <mat-menu #columns="matMenu">
+            <button mat-menu-item color="warn" (click)="columnDialog($event,'')">Modify columns</button>
+            <div mat-menu-item *ngFor="let layout of savedLayoutArray" (click)="selectLayout(layout)">
+                <a matLine href="javascript:void(0)">{{layout}}</a>
+                <button mat-icon-button matTooltip="Modify Layout" class="ml-auto">
+                    <i class="icon-edit" (click)="columnDialog($event,layout)"></i>
+                </button>
+                <button mat-icon-button (click)="deleteLayout($event,layout)" matTooltip="Delete Layout">
+                    <i class="icon-bin"></i>
+                </button>
+            </div>
+        </mat-menu>
+    </div>
+    <button mat-stroked-button matTooltip="Setings" color="accent" class="box-btn" [matMenuTriggerFor]="menu" *ngIf="showDotMenu">
+        <i class="icon-dots"></i>
+    </button>
+    <mat-menu #menu="matMenu">
+        <button mat-menu-item>Upload</button>
+        <button mat-menu-item>Download</button>
+    </mat-menu>
+</div>
+<div class="mov-filter" [ngClass]="!fixedFilter ? 'relative-mov-filter' : ''">
+    <div>
+        <button mat-button color="primary" [matMenuTriggerFor]="sort">
+            <i class="icon-sort"></i> Sort
+        </button>
+        <mat-menu #sort="matMenu">
+            <button mat-menu-item> All Employees </button>
+            <button mat-menu-item> Active Employees </button>
+            <button mat-menu-item> Inactive Employees </button>
+        </mat-menu>
+    </div>
+    <div>
+        <button mat-button color="primary" (click)="FilterBox = !FilterBox;">
+            <i class="icon-funnel"></i> Filter
+        </button>
+    </div>
+    <div>
+        <button mat-button color="primary" [matMenuTriggerFor]="layoutMenu">
+            <i class="icon-layout"></i> Column
+        </button>
+        <mat-menu #layoutMenu="matMenu">
+            <button mat-menu-item>Item 1</button>
+            <button mat-menu-item>Item 2</button>
+        </mat-menu>
+    </div>
+</div>
+<div class="filter-box" [ngClass]="FilterBox ? 'active' : ''">
+    <div class="mob-filter-header">
+        <i class="icon-filter mr-3"></i>
+        Filter
+        <button class="ml-auto" mat-icon-button (click)="FilterBox = !FilterBox;">
+            <i class="icon-close-1"></i>
+        </button>
+    </div>
+    <i class="icon-filter d-none d-md-block"></i>
+    <div class="filter-clip">
+        <mat-chip-list aria-label="Fish selection">
+            <mat-chip color="warn" *ngFor="let clicolumnp of filterClipArray; let i = index" selected>
+                {{clicolumnp.filterColumn}}
+                <mat-icon class="{{clicolumnp.operators.icon}}"></mat-icon> {{clicolumnp.filterText}}
+                <div class="chip-close" (click)="emitApplyFilterParams(true, false,i)">
+                    <i class="icon-close-1"></i>
+                </div>
+            </mat-chip>
+        </mat-chip-list>
+        <div class="add-filter">
+            <button mat-stroked-button color="warn" (click)="AddFilter = !AddFilter;" class="sm-btn add-more">Add More
+                Filter</button>
+            <div class="filter-list" [ngClass]="AddFilter ? 'active' : ''">
+                <div class="filter-heading">
+                    Add New Filter
+                    <button class="ml-auto" mat-icon-button (click)="AddFilter = !AddFilter;">
+                        <i class="icon-close"></i>
+                    </button>
+                </div>
+                <div class="filter-search">
+                    <div class="list-searech">
+                        <mat-form-field appearance="outline" class="no-label">
+                            <i class="icon-searcher1" matPrefix></i>
+                            <input matInput type="text" [(ngModel)]="filteredColumn" placeholder="Search..."
+                                autocomplete="off">
+                        </mat-form-field>
+                    </div>
+                </div>
+                <div class="btn-list">
+                    <button mat-menu-item (click)="setActivFilterName(column.name)"
+                        *ngFor="let column of DisplayedFilteredColumn |  filter:filteredColumn">{{column.name}}
+                    </button>
+                </div>
+            </div>
+            <div class="filter-list" [ngClass]="SelectFilter ? 'active' : ''">
+                <div class="filter-heading">
+                    {{activeFilterName | uppercase}}
+                    <button class="ml-auto" mat-icon-button
+                        (click)="SelectFilter = !SelectFilter;AddFilter = !AddFilter;">
+                        <i class="icon-close"></i>
+                    </button>
+                </div>
+                <div class="filter-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <button mat-stroked-button [matMenuTriggerFor]="menuFilter" class="box-btn">
+                                <i class="{{iconArray[currentSelectedOperators].icon}}"></i>
+                            </button>
+                            <mat-menu #menuFilter="matMenu">
+                                <button mat-menu-item *ngFor="let icon of iconArray; let i = index"
+                                    (click)="setCurrentSelectedOperators(i)">
+                                    <mat-icon class="{{icon.icon}}" color="primary"></mat-icon>
+                                    <span>{{icon.labelName}}</span>
+                                </button>
+                            </mat-menu>
+                        </div>
+                        <div class="col-9 ml-auto ">
+                            <form [formGroup]="applyFilterForm">
+                                <mat-form-field appearance="outline" class="no-label">
+                                    <input matInput type="text" placeholder="Enter {{activeFilterName}}"
+                                        aria-label="Number" formControlName="applyFilter"
+                                        [matAutocomplete]="autoFilter">
+                                    <mat-icon matSuffix class="icon-down"></mat-icon>
+                                    <mat-autocomplete #autoFilter="matAutocomplete">
+                                        <ng-container *ngFor="let value of filteredArray | filter:getValue()">
+                                            <mat-option *ngIf="value.name.toString().length > 0" [value]="value.name"
+                                                title="{{value.name}}">
+                                                {{value.name}}
+                                            </mat-option>
+                                        </ng-container>
+                                        <mat-option color="warn">None</mat-option>
+                                    </mat-autocomplete>
+
+                                    <mat-error *ngIf="applyFilterForm.controls.applyFilter.hasError('required')">Enter
+                                        value</mat-error>
+                                </mat-form-field>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="filter-action">
+                    <button mat-flat-button color="warn" class="sm-btn"
+                        (click)="emitApplyFilterParams(true, true,0)">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="ml-auto d-none d-md-flex" mat-icon-button (click)="closeFilter(true)">
+        <i class="icon-close-1"></i>
+    </button>
+</div>
+
+
+  import { Component, OnInit, Output, EventEmitter, Input, ViewChild } from '@angular/core';
+import { FormGroup, FormControl, Validators, FormControlName } from '@angular/forms';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { AlertBoxComponent } from '../../alert-box/alert-box/alert-box.component';
+import { MatMenuTrigger } from '@angular/material/menu';
+
+import { Router } from '@angular/router';
+
+@Component({
+    selector: 'app-data-filter',
+    templateUrl: './data-filter.component.html',
+    styleUrls: ['./data-filter.component.scss']
+})
+export class DataFilterComponent implements OnInit {
+
+    @Output() openColumnSetting: EventEmitter<string> = new EventEmitter();
+    @Output() filter: EventEmitter<object> = new EventEmitter();
+    @Output() searchParams: EventEmitter<string> = new EventEmitter();
+    @Output() layoutDeleteAction: EventEmitter<Object> = new EventEmitter();
+    @Output() selectColumnVisibility: EventEmitter<any> = new EventEmitter();
+    @Output() resetSearchValue: EventEmitter<any> = new EventEmitter();
+    @Output() closeFilterMenu: EventEmitter<any> = new EventEmitter();
+    @Input() moduleName: string = '';
+    @Input() statusClass: string;
+    @Output() resetSearchState: EventEmitter<any> = new EventEmitter();
+    @Output() deleteLayoutemit: EventEmitter<any> = new EventEmitter();
+    @Input() hasCustomStatus: boolean = false;
+    @Input() CustomStatusArray: Array<any> = [];
+    @Input() statusChangeDropDown: boolean = true;
+    @Input() customPageChangeDropDown: boolean = false;
+    @Input() showDotMenu: boolean = true;
+    @Input() fixedFilter: boolean = true;
+    @Input() showSearch: boolean = true;
+    @Input() showFilter: boolean = true;
+    @Input() selectedCustomPageDropDown: string = '';
+    @Input() customPageDropDownDataArray: Array<any> = [];
+
+    @Input() inFlyerModule: boolean = false;
+    @Input() showColumn: boolean = true;
+
+    @Output() getFlyerEmitter: EventEmitter<any> = new EventEmitter();
+
+    businessUnitIDForm:FormGroup;
+    marketingBrandForm:FormGroup;
+    flyerTypeForm:FormGroup;
+    selectedFlyerTypeID:any = 'brokerage';
+
+    navigateTo(value){
+        this.router.navigate([value]); 
+    }
+    applyFilter: any;
+    @ViewChild('ManageColumnActions', { read: MatMenuTrigger }) columns: MatMenuTrigger;
+
+    displayedColumn_: Array<any> = []
+    tableDataSource_: Array<any> = [];
+    dataTobeDisplay_: Array<any> = [];
+
+    @Input() set tableDataSource(value: Array<any>) {
+        this.tableDataSource_ = value;
+    }
+    currentPageSize_: any = 5;
+
+    @Input() set currentPageSize(value: Array<any>) {
+        this.currentPageSize_ = value;
+    }
+
+    marketingBrandOnFranchisee_: Array<any> = [];
+    selectedMarketingBrandId:any = '';
+    @Input() set marketingBrandOnFranchisee(list: Array<any>) {
+        if(list !== undefined) {
+            this.marketingBrandOnFranchisee_ = list;
+            if(this.marketingBrandOnFranchisee_[0] !== undefined && this.marketingBrandOnFranchisee_[0].hasOwnProperty('marketingbrand_id')) {
+                this.selectedMarketingBrandId = this.marketingBrandOnFranchisee_[0].marketingbrand_id;
+                if(this.marketingBrandForm !== undefined) {
+                    this.marketingBrandForm.patchValue({brandControl:this.selectedMarketingBrandId});
+                    this.getFlyer();
+                }
+            }
+        }
+    };
+
+    businessUnitList_:Array<any> = [];
+    @Input() set businessUnitList(list: Array<any>) {
+        console.log(list);        
+        if(list !== undefined) {
+            this.businessUnitList_ = list;
+            if(this.businessUnitList_[0] !== undefined && this.businessUnitList_[0].hasOwnProperty('businessunit_id')) {
+                this.selectedUnitId = this.businessUnitList_[0].businessunit_id;
+                if(this.businessUnitIDForm !== undefined) {
+                    this.businessUnitIDForm.patchValue({businessUnitControl:this.selectedUnitId});
+                    this.getFlyer();
+                }
+            }
+        }
+    }
+
+    @Input() set dataTobeDisplay(value: Array<any>) {
+        this.dataTobeDisplay_ = value;
+    }
+
+    @Input() set displayedColumn(value: Array<any>) {
+        this.displayedColumn_ = value;
+        this.displayedColumn_ = this.displayedColumn_.filter((elem) => {
+            return elem !== 'select';
+        })
+        // if (this.moduleName == "employee") {
+        //     this.displayedColumn_ = this.displayedColumn_.filter((d: any, i) => {
+        //         let bool: boolean = true;
+        //         if (d == 'office' || d == 'last login') {
+        //             bool = false;
+        //         }
+        //         return bool;
+        //     })
+        // }
+        this.DisplayedFilteredColumn = []
+        this.displayedColumn_.forEach((e) => {
+            let obj = { name: e }
+            this.DisplayedFilteredColumn.push(obj);
+        })
+    }
+    TableAction: boolean
+    @Input() value: any;
+
+    searchClick_: boolean = false;    
+    @Input() set searchClick(value) {
+        this.searchClick_ = value;
+        if(this.searchClick_){
+            this.searchParamsEmit(this.value);
+        }
+    }
+
+    FilterBox: boolean;
+    AddFilter: boolean;
+    SelectFilter: boolean;
+    selected: boolean;
+    selectedUnitId:any
+
+    activeFilterName: string = '';
+    currentSelectedOperators: number = 0;
+    filteredColumn: any;
+
+    DisplayedFilteredColumn: Array<any> = [];
+    applyFilterForm: FormGroup;
+    selectedDataToBeDisplayed: string = '';
+    filterClipArray: Array<any> = [];
+    savedLayoutJSON: Object = {};
+    savedLayoutArray: Array<any> = [];
+    filterEmployeeForm: FormGroup;
+    filteredArray: Array<any> = [{ name: '' }];
+    // iconArray: Array<any> = [
+    //     { icon: 'icon-equals', labelName: 'Equals' },
+    //     { icon: 'icon-not-equals', labelName: 'Not Equals' },
+    //     { icon: 'icon-less-than', labelName: 'Less Than' },
+    //     { icon: 'icon-greater-than', labelName: 'Greater Than' },
+    //     { icon: 'icon-less-equal', labelName: 'Less Equal' },
+    //     { icon: 'icon-greater-equal', labelName: 'Greater Equal' },
+    //     { icon: 'icon-start-contains', labelName: 'Start Contains' },
+    //     { icon: 'icon-contains', labelName: 'Contains' },
+    //     { icon: 'icon-end-contains', labelName: 'End Contains' },
+    //     { icon: 'icon-not-contains', labelName: 'Not Contains' },
+    // ];
+    iconArray: Array<any> = [
+        { icon: 'icon-equals', labelName: 'Equals' }
+    ];
+    constructor(private dialog: MatDialog, public router: Router) { }
+    ngOnInit(): void {
+        this.selectedFlyerTypeID = 'brokerage';
+        
+       this.businessUnitIDForm = new FormGroup({
+          businessUnitControl: new FormControl(this.selectedUnitId)
+       });
+
+       this.marketingBrandForm = new FormGroup({
+        brandControl: new FormControl(this.selectedMarketingBrandId)
+     });
+
+       this.flyerTypeForm = new FormGroup({
+        flyerTypeControl: new FormControl('brokerage')
+       });
+       
+       
+
+        this.filterEmployeeForm = new FormGroup({
+            filterEmployeeControl: new FormControl('')
+        });
+        this.filterEmployeeForm.patchValue({ filterEmployeeControl: 'all' })
+        this.filterEmployeeForm.valueChanges
+            .subscribe((changedData) => {
+                // this.emitApplyFilterParams(false, false, 0)
+            })
+        this.filterClipArray = [];
+        this.DisplayedFilteredColumn = []
+        this.displayedColumn_.forEach((e) => {
+            let obj = { name: e }
+            this.DisplayedFilteredColumn.push(obj);
+        })
+        this.applyFilterForm = new FormGroup({
+            applyFilter: new FormControl('', Validators.required)
+        })
+    }
+    columnDialog(event: Event, layout) {
+        this.columns.closeMenu();
+        event.stopPropagation();
+        this.openColumnSetting.emit(layout);
+    }
+    openMenu() {
+        this.savedLayoutArray = [];
+        let savedLayout = localStorage.getItem('displayedAndSortedColumns');
+        if (savedLayout && savedLayout !== 'undefined') {
+            this.savedLayoutJSON = JSON.parse(savedLayout);
+            if (this.savedLayoutJSON.hasOwnProperty('' + this.moduleName + '') && (Object.entries(this.savedLayoutJSON['' + this.moduleName + '']).length > 0)) {
+                for (var x in this.savedLayoutJSON['' + this.moduleName + '']) {
+                    this.savedLayoutArray.push(x);
+                }
+            } else {
+                this.columnDialog(new Event('click'), '');
+            }
+        }
+    }
+    selectLayout(layout: string) {
+        this.selectColumnVisibility.emit(layout);
+    }
+    deleteLayout(event: Event, layout: string) {
+        event.stopPropagation();
+        const dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to delete ' + layout + ' layout?', showConfirmation: true } });
+        dialogRef.afterClosed()
+            .subscribe((result) => {
+                if (result.hasOwnProperty('status') && result.status) {
+                    // this.layoutDeleteAction.emit({status:true, layoutName:layout});      
+                    let savedLayout = localStorage.getItem('displayedAndSortedColumns');
+                    if (savedLayout) {
+                        let savedLayoutJSON = JSON.parse(savedLayout);
+                        delete savedLayoutJSON['' + this.moduleName + '']['' + layout + ''];
+                        this.savedLayoutArray = this.savedLayoutArray.filter((e) => {
+                            return e !== layout;
+                        })
+                        localStorage.setItem('displayedAndSortedColumns', JSON.stringify(savedLayoutJSON));
+                        this.deleteLayoutemit.emit(savedLayoutJSON);
+                    }
+                }
+            })
+    }
+
+    emitApplyFilterParams(advancedFilter: boolean, filterAdd: boolean, filterIndex: any) {
+        let index: number;
+        if (advancedFilter) {
+            // CHECKING IF ANY FILTER IS REMOVED STARTS
+            if (!filterAdd) {
+                index = (this.filterClipArray.length - 1);
+                if (this.filterClipArray[filterIndex] !== undefined) {
+                    // ADD FILTER TEXT TO LIST                    
+                    let obj = { name: this.filterClipArray[filterIndex]['filterColumn'] };
+                    this.DisplayedFilteredColumn.push(obj);
+
+                    // REMOVE FILTER
+                    this.filterClipArray = this.filterClipArray.filter((elem: any, index: any) => {
+                        return index !== filterIndex;
+                    });
+                }
+                let object = { limit: this.currentPageSize_, offset: 0, filterArray: this.filterClipArray }
+                this.filter.emit(object);
+                this.resetSearchControlValue();
+                // CHECKING IF ANY FILTER IS REMOVED ENDS
+            } else {
+                if (this.applyFilterForm.valid) {
+                    this.SelectFilter = !this.SelectFilter;
+                    this.filterClipArray.push({ filterText: this.applyFilterForm.value.applyFilter, operators: this.iconArray[this.currentSelectedOperators], filterColumn: this.activeFilterName, searchKey: this.selectedDataToBeDisplayed });
+                    index = (this.filterClipArray.length - 1);
+
+                    // REMOVE FILTER NAME FROM LIST IF FILTER IS ALREADY APPLIED
+                    this.DisplayedFilteredColumn = this.DisplayedFilteredColumn.filter((elem) => {
+                        return elem.name !== this.activeFilterName;
+                    })
+                }
+            }
+            if (this.applyFilterForm.valid) {
+                let object = { limit: this.currentPageSize_, offset: 0, filterArray: this.filterClipArray }
+                this.filter.emit(object);
+                this.resetSearchControlValue();
+            }
+
+        } else {
+            this.filter.emit(this.filterClipArray);
+        }
+    }
+    emitFilter(data: any) {
+        this.filterClipArray = [];
+        if (data.value !== 'all') {
+            this.activeFilterName = this.statusClass
+            this.filterClipArray.push({
+                filterText: data.value, operators: { icon: "icon-equals", labelName: "Equals" }, filterColumn: this.activeFilterName, searchKey: this.statusClass
+            });
+            // REMOVE FILTER NAME FROM LIST IF FILTER IS ALREADY APPLIED
+            this.DisplayedFilteredColumn = this.DisplayedFilteredColumn.filter((elem) => {
+                return elem.name !== this.activeFilterName;
+            })
+        } else {
+            this.filterClipArray = [];
+        }
+        let object = { limit: this.currentPageSize_, offset: 0, filterArray: this.filterClipArray };
+        this.filter.emit(object);
+        this.resetSearchControlValue();
+    }
+
+    deleteFilter(index: any) {
+        if (this.filterClipArray[index] !== undefined) {
+            this.filterClipArray.splice(index, 1);
+        }
+    }
+
+    setActivFilterName(filterName: string) {
+        this.filteredArray = []
+        let agentArray: Array<any> = [];
+        let index: any = '';
+        this.SelectFilter = !this.SelectFilter;
+        this.AddFilter = !this.AddFilter;
+        this.activeFilterName = filterName;
+        if (this.displayedColumn_.indexOf(filterName) !== -1) {
+            index = this.dataTobeDisplay_[this.displayedColumn_.indexOf(filterName)];
+            this.selectedDataToBeDisplayed = index;
+        }
+        this.tableDataSource_.forEach((elem) => {
+            let elemArray: Array<any> = [];
+            if (elem.hasOwnProperty('' + index + '')) {
+                if (elem['' + index + ''] instanceof Array) {
+                    elemArray = elem['' + index + ''];
+                } else {
+                    elemArray = elem['' + index + ''].split(',');
+                }
+
+                if (elemArray[0].match(/<\/?[a-z][\s\S]*>/)) {
+                    let parser = new DOMParser();
+                    elemArray.forEach((element: any) => {
+                        let html = parser.parseFromString(element, 'text/html');
+                        if (agentArray.indexOf(html.body.children[0].innerHTML) == -1) {
+                            agentArray.push(html.body.children[0].innerHTML);
+                        }
+                    })
+                } else {
+                    if (agentArray.indexOf(elemArray[0]) == -1) {
+                        agentArray.push(elemArray[0]);
+                    }
+                }
+            }
+        })
+        agentArray.forEach((a: any) => {
+            this.filteredArray.push({ name: a });
+        })
+        this.applyFilterForm.reset();
+    }
+
+    setCurrentSelectedOperators(index: any) {
+        this.currentSelectedOperators = index;
+    }
+
+    searchParamsEmit(params) {
+        this.resetFilterValue(false);
+        this.searchParams.emit(params);
+    }
+    searchFilterChange() {
+        if (this.value.length == 0) {
+            this.resetSearchValue.emit('');
+            this.searchClick_ = false;
+        }
+    }
+
+    getValue() {
+        if (this.applyFilterForm.value.applyFilter !== null && this.applyFilterForm.value.applyFilter !== undefined) {
+            return this.applyFilterForm.value.applyFilter.toString();
+        } else {
+            return ''
+        }
+
+    }
+
+    closeFilter(emitValue: boolean) {
+        this.FilterBox = false;
+        this.AddFilter = false;
+        if (this.filterClipArray.length > 0) {
+            if (emitValue) {
+                this.closeFilterMenu.emit('');
+            }
+            let index = (this.filterClipArray.length - 1);
+            this.filterClipArray.forEach((elem, index) => {
+                let obj = { name: elem['filterColumn'] };
+                this.DisplayedFilteredColumn.push(obj);
+            })
+            this.filterClipArray = [];
+            this.filterEmployeeForm.patchValue({ filterEmployeeControl: 'all' })
+        }
+    }
+    resetSearchControlValue() {
+        this.value = ''
+        this.resetSearchState.emit('');
+    }
+
+    resetFilterValue(emitValue: boolean) {
+        this.closeFilter(emitValue);
+    }
+    searchParamsEmitKeyDown($event) {
+        if ($event.keyCode == 13 && this.value.length > 0) {
+            this.searchParamsEmit(this.value)
+        }
+    }
+
+    getFlyer(franchisee?) {
+        if( this.flyerTypeForm !== undefined && this.flyerTypeForm.value.flyerTypeControl !== '' &&
+        this.businessUnitIDForm.value.businessUnitControl !== '') {
+            this.getFlyerEmitter.emit({type:this.flyerTypeForm.value.flyerTypeControl, franchiseeChange:franchisee,
+            bID:this.businessUnitIDForm.value.businessUnitControl, brandId:this.marketingBrandForm.value.brandControl});
+        }
+    }
+}
