@@ -1,0 +1,27 @@
+<ng-container *ngIf="errorMessage">
+  <div mat-dialog-title *ngIf="showConfirmation">
+    Confirmation
+  </div>
+  <div mat-dialog-content>
+    <p class="mb-4">{{data.textContent}}</p>
+  </div>
+  <div mat-dialog-actions>
+    <button mat-flat-button color="warn" cdkFocusInitial class="sm-btn" (click)="onDelete()"><ng-container *ngIf="showConfirmation">Yes</ng-container ><ng-container *ngIf="!showConfirmation">Ok</ng-container></button>
+    <button mat-stroked-button color="primary" (click)="onNoClick()" class="sm-btn" mat-dialog-close
+      *ngIf="showConfirmation">No</button>
+  </div>
+</ng-container>
+<ng-container *ngIf="saveSearch">
+  <div mat-dialog-title>
+    Save Search
+  </div>
+  <div class="mb-4">
+    <mat-form-field appearance="outline" class="no-label">
+      <input matInput type="search" placeholder="Search..." [(ngModel)]="saveSearchName">
+    </mat-form-field>
+  </div>
+  <div mat-dialog-actions>
+    <button mat-flat-button color="warn" cdkFocusInitial class="sm-btn" (click)="onSave()">Save</button>
+    <button mat-stroked-button color="primary" (click)="onNoClick()" class="sm-btn" mat-dialog-close>Cancel</button>
+  </div>
+</ng-container>
