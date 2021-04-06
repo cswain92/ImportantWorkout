@@ -1,0 +1,1397 @@
+<section class="page-heading" *ngIf="showPageName">
+    <!-- <app-page-name [name]="pageName" (innerPage)="innerPage()" [addBtn]="editPermission == true?true:false"></app-page-name> -->
+    <app-page-name [name]="pageName" (innerPage)="innerPage()" [addBtn]="!disableTableAction && createButtonOn" [calenderListPage]="calenderListPage">
+    </app-page-name>
+</section>
+<section class="golbal-filter" *ngIf="showGlobalFilter" [ngClass]="!fixedFilter ? 'relative-global-filter' : ''">
+    <ng-container *ngIf="showEntireFilter">
+        <app-data-filter [tableDataSource]="tableDataSource_" (filter)="filter($event)" [moduleName]="moduleName"
+            (searchParams)="applyFilter($event)" class="filter-parent" [dataTobeDisplay]="immutabledataToBeDisplay"
+            [displayedColumn]="immutableDisplayedColumns" [statusClass]="statusClass"
+            (openColumnSetting)="openColumnSetting($event)" (selectColumnVisibility)="selectColumnVisibility($event)"
+            (resetSearchState)="resetSearchState()" (closeFilterMenu)="closeFilterMenu()" [showColumn]="showColumn"
+            [currentPageSize]="currentPageSize" (deleteLayoutemit)="deleteLayoutemit()" (getFlyerEmitter)="getFlyerEmitterFunction($event)"
+            (resetSearchValue)="resetSearchValueCall($event)" [hasCustomStatus]="hasCustomStatus"
+            [CustomStatusArray]="CustomStatusArray" [statusChangeDropDown]="statusChangeDropDown"
+            [showDotMenu]="showDotMenu" [fixedFilter]="fixedFilter" [inFlyerModule]="inFlyerModule" [customPageChangeDropDown]="customPageChangeDropDown"
+            [selectedCustomPageDropDown]="selectedCustomPageDropDown" [businessUnitList]="businessUnitList_" [marketingBrandOnFranchisee]="marketingBrandOnFranchisee_"
+            [customPageDropDownDataArray]="customPageDropDownDataArray" [value]="searchValue" [searchClick]="searchClick_" [showSearch]="showSearch" [showFilter]="showFilter">
+        </app-data-filter>
+    </ng-container>
+    <ng-container *ngIf="showTableAction && displayTableActionOnly">
+        <app-data-table-action *ngIf="!disableTableAction" class="table-action" [showActivate]="showActivate"
+            [showDeactivate]="showDeactivate" [selectionLength]="selection.selected.length"
+            [totalDataLength]="tableDataSource.length" [ngClass]="TableAction ? 'active' : ''"
+            (selectAll)="selectAll($event)" (close)="closeTableAction($event)" (action)="tableAction($event)"
+            (rowEdit)="rowEdit($event)" (shared)="shared($event)" (emailed)="emailed($event)"   (rowRunAgain)="rowRunAgain($event)" [showRunAgain]="showRunAgain"
+            [showActiveInactive]="showActiveInactive" [showDelete]="showDelete" [showExport]="showExport"
+            [showTransfer]="showTransfer" [showClone]="showClone" [showShare]="showShare" [showEmail]="showEmail"
+            [showImportance]="showImportance" [showTag]="showTag" [showEdit]="showEdit">
+        </app-data-table-action>
+    </ng-container>
+</section>
+<section
+    [ngClass]="{'content-part':addContentClass,'dialogTable':inDialogClass, 'relative-tbl-main': relativeTblMain }">
+    <!-- <div [ngClass]="{'tbl-main':tableMain}"> -->
+    <div [ngClass]="{'tbl-main':tableMain}">
+        <ng-container *ngIf="showLoader && !noLoaderShow_">
+            <!-- <ng-container> -->
+            <div class="table-box">
+                <mat-progress-bar color="warn" mode="indeterminate"></mat-progress-bar>
+                <table class="mat-table">
+                    <thead>
+                        <tr class="mat-header-row">
+                            <th style="position:initial" class="mat-header-cell" *ngFor="let loader of loaderArray">
+                                <ngx-skeleton-loader count="1" appearance="line"
+                                    [theme]="{'border-radius': '0px',height: '20px','background-color': '#e0e0e0',border: 'none','margin':'5px'}">
+                                </ngx-skeleton-loader>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="mat-row" *ngFor="let loader of loaderArray">
+                            <td class="mat-cell" *ngFor="let loader of loaderArray">
+                                <ngx-skeleton-loader count="1" appearance="line"
+                                    [theme]="{'border-radius': '0px',height: '20px','background-color': '#e0e0e0',border: 'none','margin':'5px'}">
+                                </ngx-skeleton-loader>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot></tfoot>
+                </table>
+            </div>
+        </ng-container>
+        <div class="table-box">
+            <table id="dataTable" #table mat-table (matSortChange)="onSortData($event)"
+                *ngIf="(!showLoader && !noLoaderShow_) || noLoaderShow_"
+                [dataSource]="tableDataSource | filter:searchParams" matSort>
+                <ng-container matColumnDef="select" *ngIf="showCheckbox">
+                    <th mat-header-cell *matHeaderCellDef [ngClass]="{'check-box':checkBoxClass}"
+                        data-label="Check All">
+                        <mat-checkbox [disabled]="disableTableAction || !multipleSelect" color="primary"
+                            (change)="masterToggle($event,false)" [checked]="selection.hasValue() && isAllSelected()"
+                            [indeterminate]="selection.hasValue() && !isAllSelected()" [aria-label]="checkboxLabel()">
+                        </mat-checkbox>
+                    </th>
+                    <td mat-cell *matCellDef="let element,let i = index" [ngClass]="{'check-box':checkBoxClass}">
+                        <mat-checkbox [disabled]="disableTableAction" color="warn" (change)="rowCheck($event,element,i)"
+                            [checked]="selection.isSelected(element)"></mat-checkbox>
+                    </td>
+                </ng-container>
+                <ng-container matColumnDef="extraTableAction" *ngIf="showExtraTableAction">
+                    <th mat-header-cell *matHeaderCellDef>
+                    </th>
+                    <td mat-cell *matCellDef="let element,let i = index">
+                        <div _ngcontent-wci-c309="" class="d-flex align-items-center">
+                            <button mat-icon-button class="sm-btn" (click)="setFlag($event,element,i)">
+                                <i class="icon-flag" [ngClass]="element.flag=='Flag' ? 'text-warn' : ''"></i>
+                            </button>
+                            <button mat-icon-button aria-label="Note" class="sm-btn" (click)="rowNote(element)">
+                                <i class="icon-note text-warn"></i>
+                            </button>
+                        </div>
+                    </td>
+                </ng-container>
+                <ng-container *ngFor="let headingName of displayedColumns | customSlice , let i = index">
+                    <ng-container matColumnDef="{{headingName}}" *ngIf="headingName.toLowerCase()!=='extratableaction'">
+                        <ng-container
+                            *ngIf="headingName.toLowerCase() == 'status' || headingName.toLowerCase() == 'stat' ; else otherTemplate_">
+                            <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                {{ headingName | titlecase }}</th>
+                            <td mat-cell *matCellDef="let row" [attr.data-label]="displayedColumns[i+1]">
+                                <ng-container *ngIf="!isInputTemplate; else inputTemplate">
+                                    <div class="stat-box"
+                                        [ngClass]="{'active':((row[dataToBeDisplay[i]] == 'Active') || (row[dataToBeDisplay[i]] == 'Final') || (row[dataToBeDisplay[i]] == 'Prospecting')),'inactive':((row[dataToBeDisplay[i]] == 'Inactive') || (row[dataToBeDisplay[i]] == 'Draft') || (row[dataToBeDisplay[i]] == 'Negotiation')), 'yellow':((row[dataToBeDisplay[i]] == 'Qualification') || (row[dataToBeDisplay[i]] == 'Closed Lost')), 'blue':(row[dataToBeDisplay[i]] == 'Need Analysis'), 'orange':(row[dataToBeDisplay[i]] == 'Proposal'), 'pink':(row[dataToBeDisplay[i]] == 'Closed Won')}">
+                                        <span>{{row[dataToBeDisplay[i]]}}</span>
+                                    </div>
+                                </ng-container>
+                                <ng-template #inputTemplate>
+                                    <label class="switch">
+                                        <input type="checkbox" [disabled]="row.hasOwnProperty('noEdit')"
+                                            (change)="emitSetStatus($event,row)"
+                                            [checked]="row[dataToBeDisplay[i]] == 'Active'">
+                                        <span class="slide"></span>
+                                        <!-- <span class="slide-text">Smoking</span> -->
+                                    </label>
+                                </ng-template>
+                            </td>
+                        </ng-container>
+                        <ng-template #otherTemplate_>
+                            <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ headingName | titlecase }}</th>
+                            <td mat-cell *matCellDef="let row" [attr.data-label]="headingName">
+                                <a *ngIf="cloumnWithRouterLink == headingName && !disableTableAction; else withoutLink_"
+                                    href="#" (click)="routerLinkClick($event,row)">
+                                    <div *ngIf="columnWithLogo == headingName; else columnWithNoLogo"
+                                        class="d-flex align-items-center">
+                                        <ng-container
+                                            *ngIf="(row.hasOwnProperty('listing_image') && typeOf(row.listing_image) == 'string' && row.listing_image.length > 0);else noImageTemplate">
+                                            <div class="user-pic mr-2">
+                                                <img src="{{row.listing_image}}">
+                                            </div>
+                                        </ng-container>
+                                        <ng-template #noImageTemplate>
+                                            <div class="user-pic mr-2">
+                                                <span>{{row[dataToBeDisplay[i]][0] | uppercase}}</span>
+                                            </div>
+                                        </ng-template>
+                                        {{row[dataToBeDisplay[i]]}}
+                                    </div>
+                                    <ng-template #columnWithNoLogo>
+                                        {{row[dataToBeDisplay[i]]}}
+                                    </ng-template>
+                                </a>
+                                <ng-template #withoutLink_>
+                                    <div *ngIf="columnWithLogo == headingName; else columnWithNoLogo"
+                                        class="d-flex align-items-center">
+                                        <ng-container
+                                            *ngIf="(row.hasOwnProperty('listing_image') && typeOf(row.listing_image) == 'string' && row.listing_image.length > 0);else noImageTemplate">
+                                            <div class="user-pic mr-2">
+                                                <img src="{{uploadUrl + row.listing_image}}">
+                                            </div>
+                                        </ng-container>
+                                        <ng-template #noImageTemplate>
+                                            <div class="user-pic mr-2">
+                                                <span>{{row[dataToBeDisplay[i]][0] | uppercase}}</span>
+                                            </div>
+                                        </ng-template>
+                                        {{row[dataToBeDisplay[i]]}}
+                                    </div>
+                                    <ng-template #columnWithNoLogo>
+                                        <ng-container
+                                            *ngIf="headingName == 'remove' && !row.hasOwnProperty('noEdit'); else normalColumnEmailCheck_">
+                                            <button mat-icon-button color="warn" (click)="removeItem(row)"
+                                                class="sm-btn">
+                                                <i class="icon-bin"></i>
+                                            </button>
+                                        </ng-container>
+                                        <ng-template #normalColumnEmailCheck_>
+                                            <ng-container
+                                                *ngIf="columnWithEmailLink == headingName; else normalColumn_">
+                                                <a
+                                                    href="mailto:{{row[dataToBeDisplay[i]]}}">{{row[dataToBeDisplay[i]]}}</a>
+                                            </ng-container>
+                                            <ng-template #normalColumn_>
+                                                <ng-container
+                                                    *ngIf="columnWithTel == headingName; else columnWithNoTel">
+                                                    <a
+                                                        href='tel:{{row[dataToBeDisplay[i]]}}'>{{row[dataToBeDisplay[i]]}}</a>
+                                                </ng-container>
+                                                <ng-template #columnWithNoTel>
+                                                    <ng-container
+                                                        *ngIf="columnMiscellaneousRouterLink_.length > 0 && columnMiscellaneousRouterLink_.indexOf(headingName) !== -1; else noColumnMiscellaneousRouterLinkTemplate">
+                                                        <a
+                                                            href="{{headingName.toLowerCase().replace(' ', '_')}}/edit-{{headingName.toLowerCase().replace(' ', '_')}}/{{urlEncode(row[headingName.toLowerCase().replace(' ', '_')+'_id'])}}">{{row[dataToBeDisplay[i]]}}</a>
+                                                    </ng-container>
+                                                    <ng-template #noColumnMiscellaneousRouterLinkTemplate>
+                                                        <ng-container
+                                                            *ngIf="headingName=='Importance'; else noImportanceTemplate">
+                                                            <div class="ico-box"
+                                                                [ngClass]="{'text-sky':(row[dataToBeDisplay[i]] == 'Cold'),'text-yellowdark':(row[dataToBeDisplay[i]] == 'Warm'),'text-red':(row[dataToBeDisplay[i]] == 'Hot')}">
+                                                                <i
+                                                                    class="icon-{{row[dataToBeDisplay[i]] | lowercase}}"></i>
+                                                                {{row[dataToBeDisplay[i]]}}
+                                                            </div>
+                                                        </ng-container>
+                                                        <ng-template #noImportanceTemplate>
+                                                            <ng-container
+                                                                *ngIf="headingName=='Tag'; else noTagTemplate">
+                                                                <div class="tag-box"
+                                                                    [ngClass]="{'on':(row[dataToBeDisplay[i]] == 'Tag'),'off':(row[dataToBeDisplay[i]] == 'No Tag')}">
+                                                                    {{row[dataToBeDisplay[i]]}}
+                                                                </div>
+                                                            </ng-container>
+                                                            <ng-template #noTagTemplate>
+                                                                <a *ngIf="cloumnWithViewLink == headingName && !disableTableAction; else withoutCloumnViewLink"
+                                                                    href="#" (click)="rowView(row)">
+                                                                    {{row[dataToBeDisplay[i]]}}
+                                                                </a>
+                                                                <ng-template #withoutCloumnViewLink>
+                                                                    <div [innerHTML]="row[dataToBeDisplay[i]]"></div>
+                                                                </ng-template>
+                                                            </ng-template>
+                                                        </ng-template>
+                                                    </ng-template>
+                                                </ng-template>
+                                            </ng-template>
+                                        </ng-template>
+                                    </ng-template>
+                                </ng-template>
+                            </td>
+                        </ng-template>
+                    </ng-container>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+                    [ngClass]="{'active':(selection.selected.indexOf(row)!== -1)}">
+                </tr>
+            </table>
+
+            <table id="hideDataTable" style="display: none;">
+                <tr>
+                    <ng-container *ngFor="let headingName of displayedColumns">
+                        <th *ngIf="headingName.toLowerCase() != 'select'">{{ headingName | titlecase }}</th>
+                    </ng-container>
+                </tr>
+                <tr *ngFor="let selectrow of selectedRow">
+                    <td *ngFor="let columndata of dataToBeDisplay">{{selectrow[columndata]}}</td>
+                </tr>
+            </table>
+
+            <table id="hideDataTableCSV" style="display: none;">
+                <tr>
+                    <ng-container *ngFor="let headingName of displayedColumns">
+                        <th *ngIf="headingName.toLowerCase() != 'select'">"{{ headingName | titlecase }}"</th>
+                    </ng-container>
+                </tr>
+                <tr *ngFor="let selectrow of selectedRow">
+                    <td *ngFor="let columndata of dataToBeDisplay">"{{selectrow[columndata]}}"</td>
+                </tr>
+            </table>
+
+            <!-- <mat-paginator (page)="paginateOnDOMClick($event)" color="primary" [pageSize]="pageSize"
+                [pageSizeOptions]="pageSizeOptions" showFirstLastButtons></mat-paginator> -->
+                
+            <div class="mat-paginator" *ngIf="showPaginator"
+                [ngClass]="!fixedPaginator ? 'relative-mat-paginator' : ''">
+                <div class="row align-items-center">
+                    <div class="col-auto">Items per page </div>
+                    <div class="col-auto">
+                        <form>
+                            <mat-form-field appearance="outline" class="no-label">
+                                <mat-select [(value)]="currentPageSize" placeholder="{{isPropertyTableViewPage?pageSizeOptions[2]:pageSizeOptions[0]}}"
+                                    (selectionChange)="paginateOnDOMClick(1,true,true,true)">
+                                    <mat-option *ngFor="let paginationNumber of pageSizeOptions; let i = index"
+                                        value="{{paginationNumber}}" selected>{{paginationNumber}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </form>
+                    </div>
+                    <div class="col-auto"> {{((activePageIndex-1)*currentPageSize)+1}} to
+                        {{activePageIndex*currentPageSize > totalData_? totalData_ : activePageIndex*currentPageSize}}
+                        of {{totalData_}} results</div>
+                    <div class="col-md-auto ml-auto">
+                        <ul class="pagination">
+                            <li class="page-item" *ngIf="paginationArray.length > 1"
+                                [ngClass]="{'disabled':currentPaginationStackIndex == 1}">
+                                <a (click)="paginateOnDOMClick(paginationArray[0][0].index,false,true,false)" matRipple
+                                    [matRippleColor]="black" class="page-link" style="cursor: pointer;">First</a>
+                            </li>
+                            <li class="page-item" *ngIf="paginationArray.length > 0"
+                                [ngClass]="{'disabled': currentPageIndex == 1}">
+                                <a matRipple [matRippleColor]="black"
+                                    (click)="paginateOnDOMClick((currentPageIndex-1),false,true,false)"
+                                    class="page-link">Previous</a>
+                            </li>
+                            <ng-container *ngFor="let paginationStack of paginationArray;let i1 = index">
+                                <ng-container *ngFor="let paginationNumber of paginationStack; let i = index">
+                                    <li class="page-item"
+                                        [ngClass]="{'active': currentPageIndex == paginationNumber.index}"
+                                        *ngIf="this.currentPaginationStackIndex == paginationNumber.stackIndex">
+                                        <a matRipple [matRippleColor]="black" class="page-link"
+                                            (click)="paginateOnDOMClick(paginationNumber.index,false,true,false)">{{paginationNumber.index}}</a>
+                                    </li>
+                                </ng-container>
+                            </ng-container>
+
+                            <li class="page-item" *ngIf="paginationArray.length > 0"
+                                [ngClass]="{'disabled':currentPageIndex == (paginationArray.length == 1 ? paginationArray[currentPaginationStackIndex-1].length:paginationArray[paginationArray.length-1][paginationArray[paginationArray.length-1].length-1].index)}">
+                                <a (click)="paginateOnDOMClick((currentPageIndex+1),false,true,false)" matRipple
+                                    [matRippleColor]="black" class="page-link" style="cursor: pointer;">Next</a>
+                            </li>
+                            <li class="page-item" *ngIf="paginationArray.length > 1"
+                                [ngClass]="{'disabled':currentPaginationStackIndex == paginationArray.length}">
+                                <a (click)="paginateOnDOMClick(paginationArray[paginationArray.length-1][paginationArray[paginationArray.length-1].length-1].index,false,true,false)"
+                                    matRipple [matRippleColor]="black" class="page-link"
+                                    style="cursor: pointer;">Last</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ng-container *ngIf="!showLoader && tableDataSource_.length == 0">
+            <div class="no_data text-center text-danger mt-5">
+                <h3>No data</h3>
+            </div>
+        </ng-container>
+    </div>
+</section>
+
+
+
+
+import { AfterViewInit, Component, OnInit, OnChanges, OnDestroy, Inject, SimpleChanges, ViewChild, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTable, MatTableDataSource } from '@angular/material/table';
+import { SelectionModel } from '@angular/cdk/collections';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { ColumnSectionComponent } from '../column-section/column-section.component';
+import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal.component';
+import { AlertBoxComponent } from '../../alert-box/alert-box/alert-box.component';
+import { GlobalService } from '../../../service/global.service';
+import { UploadFileService } from '../../../service/upload-file.service';
+
+import { Store } from '@ngrx/store';
+import { AppState } from 'src/app/_shared/store/models/app-state.model';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+import { ExportAsService, ExportAsConfig, SupportedExtensions } from 'ngx-export-as';
+
+
+@Component({
+    selector: 'app-data-table',
+    templateUrl: './data-table.component.html',
+    styleUrls: ['../../../../../assets/css/list-page.scss', './data-table.component.scss']
+})
+export class DataTableComponent implements OnInit, AfterViewInit, OnChanges, OnDestroy {
+
+    tableDataSource_: Array<any> = [];
+    showLoaderOptional_: boolean;
+    currentPaginationStackIndex: any = 1;
+
+    selectedRow: Array<any> = [];
+
+    @Input() displayedColumns: Array<any> = [];
+    // @Input() tableDataSource: Array<any> = [];
+
+    @Input() dataToBeDisplay: Array<any> = [];
+    @Input() pageSize: number = 20;
+    @Input() pageSizeOptions: Array<any> = [20, 50, 100, 500, 1000];
+    @Input() pageName: string = '';
+    @Input() moduleName: string = '';
+    @Input() cloumnWithRouterLink: string = '';
+    @Input() cloumnWithViewLink: string = '';
+    @Input() columnWithLogo: string = '';
+    @Input() columnWithEmailLink: string = '';
+    @Input() showExtraTableAction: boolean = false;
+    @Input() showDeactivate: boolean = true;
+    @Input() showActivate: boolean = true;
+    @Input() showRunAgain: boolean = false;
+    @Input() showActiveInactive: boolean = true;
+    @Input() showDelete: boolean = true;
+    @Input() showExport: boolean = false;
+    @Input() showTransfer: boolean = false;
+    @Input() showClone: boolean = false;
+    @Input() showEmail: boolean = false;
+    @Input() showTag: boolean = false;
+    @Input() showImportance: boolean = false;
+    @Input() showEdit: boolean = true;
+    @Input() showGlobalFilter: boolean = true;
+    @Input() showPageName: boolean = true;
+    @Input() addContentClass: boolean = true;
+    @Input() tableMain: boolean = true;
+    @Input() checkBoxClass: boolean = true;
+    @Input() fixedPaginator: boolean = true;
+    @Input() fixedFilter: boolean = true;
+    @Input() paginationArray: Array<any> = [];
+    @Input() statusClass: string = '';
+    @Input() dateFormat: string = '';
+    @Input() inDialogClass: boolean = false;
+    @Input() relativeTblMain: boolean = false;
+    @Input() showPaginator: boolean = true;
+    @Input() isInputTemplate: boolean = false;
+    @Input() columnWithTel: string = '';
+    @Input() showTableAction: boolean = true;
+    @Input() disableTableAction: boolean = false;
+    @Input() createButtonOn: boolean = true;
+    @Input() hasCustomStatus: boolean = false;
+    @Input() CustomStatusArray: Array<any> = [];
+    @Input() showCheckbox: boolean = true;
+    @Input() statusChangeDropDown: boolean = true;
+    @Input() customPageChangeDropDown: boolean = false;
+    @Input() showDotMenu: boolean = true;
+    @Input() selectedCustomPageDropDown: string = '';
+    @Input() customPageDropDownDataArray: Array<any> = [];
+    @Input() displayTableActionOnly: boolean = true;
+    @Input() showShare: boolean = false;
+    @Input() multipleSelect: boolean = true;
+    @Input() noTableAction: boolean = false;
+    @Input() showSearch: boolean = true;
+    @Input() showFilter: boolean = true;
+    @Input() showEntireFilter: boolean = true;
+    
+
+    @Output() getFlyerEmitter: EventEmitter<any> = new EventEmitter();
+
+    @Input() inFlyerModule: boolean = false;
+    @Input() showColumn: boolean = true;
+
+    
+
+    public calenderListPage: boolean = false;
+    @Input() set addButtonOnListPage(value: any){
+        this.createButtonOn = value
+        this.calenderListPage = true;
+    }
+
+    hasRemovebutton_: boolean = false;
+    columnMiscellaneousRouterLink_: Array<string> = []
+    @Input() set columnMiscellaneousRouterLink(value: Array<any>) {
+        this.columnMiscellaneousRouterLink_ = value;
+    }
+
+    @Input() set hasRemovebutton(value: boolean) {
+        this.hasRemovebutton_ = value;
+        if (this.hasRemovebutton_) {
+            this.displayedColumns = this.displayedColumns.filter((e: any, i: any) => {
+                return e !== "remove";
+            })
+            this.displayedColumns.push("remove");
+        }
+    }
+
+    @Input() searchValue: any;
+
+    searchClick_: boolean = false;    
+    @Input() set searchClick(value) {
+        this.searchClick_ = value;
+    }
+
+    businessUnitList_:Array<any> = [];
+    @Input() set businessUnitList(list: Array<any>) {
+        if(list !== undefined) {
+            this.businessUnitList_ = list;
+        }
+    }
+    marketingBrandOnFranchisee_:Array<any> = [];
+    @Input() set marketingBrandOnFranchisee(list: Array<any>) {
+        if(list !== undefined) {
+            this.marketingBrandOnFranchisee_ = list;
+        }
+    }
+
+    @Output() rowSelection: EventEmitter<object> = new EventEmitter();
+    @Output() goInnerPage: EventEmitter<string> = new EventEmitter();
+
+    @Output() paginatePage: EventEmitter<any> = new EventEmitter();
+    @Output() delete: EventEmitter<any> = new EventEmitter();
+    @Output() editRow: EventEmitter<any> = new EventEmitter();
+    @Output() share: EventEmitter<any> = new EventEmitter();
+    @Output() email: EventEmitter<any> = new EventEmitter();
+    @Output() viewRow: EventEmitter<any> = new EventEmitter();
+    @Output() runAgainRow: EventEmitter<any> = new EventEmitter();
+    @Output() search: EventEmitter<any> = new EventEmitter();
+    @Output() filterData: EventEmitter<any> = new EventEmitter();
+    @Output() activate: EventEmitter<any> = new EventEmitter();
+    @Output() deactivate: EventEmitter<any> = new EventEmitter();
+    @Output() rowCheckedObject: EventEmitter<any> = new EventEmitter();
+    @Output() resetSearchValue: EventEmitter<any> = new EventEmitter();
+    @Output() removeItemEmit: EventEmitter<any> = new EventEmitter();
+    @Output() setStatus: EventEmitter<any> = new EventEmitter();
+    @Output() cold: EventEmitter<any> = new EventEmitter();
+    @Output() warm: EventEmitter<any> = new EventEmitter();
+    @Output() hot: EventEmitter<any> = new EventEmitter();
+    @Output() tag: EventEmitter<any> = new EventEmitter();
+    @Output() notag: EventEmitter<any> = new EventEmitter();
+    @Output() flag: EventEmitter<any> = new EventEmitter();
+    @Output() noflag: EventEmitter<any> = new EventEmitter();
+
+    @Output() noteRow: EventEmitter<any> = new EventEmitter();
+
+
+    @ViewChild(MatPaginator) paginator: MatPaginator;
+    @ViewChild(MatSort) sort: MatSort;
+    @ViewChild(MatTable) table: MatTable<any>;
+
+    paginatePageIndication: boolean = true;
+
+    // SET INPUT VALUE ASYNCHRONOUSLY
+    @Input() set tableDataSource(value: Array<any>) {
+        this.tableDataSource_ = value;
+        if (value.length == 6) {
+            if (this.table !== undefined) {
+                this.table.renderRows();
+            }
+            this.tableDataSource_ = value;
+            // setTimeout(function () { this.tableDataSource_ = value; }, 1000);
+        }
+        // this.tableDataSource_ = value;
+        this.selection = new SelectionModel<any>(true, []);
+
+        // PRE SELETED ELEMENT CALCULATION ENDS
+
+        if (this.tableDataSource_.length > 0) {
+
+            this.dataSortingState[0]['normal'] = this.tableDataSource_
+
+            if ((this.filterState.length > 0 || this.searchState.state) && !this.callFromPaginationButton) {
+                this.paginateFromComponent(1, true, false);
+            } else {
+                this.paginateFromComponent(this.currentPageIndex, true, false);
+            }
+
+            this.reInitiateDataSource();
+
+            // CHECKING LOCAL STORAGE FOR COLUMN SHOW HIDE
+            let localStorageDisplayedColumn = localStorage.getItem('displayedAndSortedColumns');
+            if (localStorageDisplayedColumn && localStorageDisplayedColumn !== "undefined") {
+                let savedLayoutJSON = JSON.parse(localStorageDisplayedColumn);
+                let finalColumnObject: Object = {};
+                for (var x in savedLayoutJSON) {
+                    if (x == this.moduleName) {
+                        for (var y in savedLayoutJSON[x]) {
+                            if (savedLayoutJSON[x][y].lastSelected) {
+                                finalColumnObject = savedLayoutJSON[x][y];
+                            }
+                        }
+                    }
+                }
+                this.columnFilterFunction(finalColumnObject);
+            }
+            this.masterToggle({ checked: false }, true);
+            if (this.lastSelectedObject.length > 0) {
+                this.lastSelectedObject.forEach((elem: any) => {
+                    if (elem.pageIndex == this.activePageIndex) {
+                        if (elem.selection.length > 0) {
+                            elem.selection.forEach((s: any) => {
+                                this.selection.select(this.tableDataSource_[s.i]);
+                                // this.rowCheck({ checked: true }, s.elem, s.i);                               
+                                this.chdtcRef.detectChanges();
+                            })
+                        }
+                    }
+                })
+            }
+
+        }
+    }
+    get tableDataSource() {
+        return this.tableDataSource_;
+    }
+    @Input() set deselectAll(status: any) {
+        if (status.status) {
+            this.masterToggle({ checked: false }, false);
+        }
+    }
+    noLoaderShow_: boolean = false;
+    @Input() set noLoaderShow(data: any) {
+        this.noLoaderShow_ = data;
+    }
+
+    preSelectedData_: Array<any> = [];
+
+    @Input() set preSelectedData(data: any) {
+        this.preSelectedData_ = data;
+    }
+
+    @Input() set searchParamsFromOutside(element: string) {
+        if (element !== undefined) {
+            this.applyFilter(element)
+        }
+    }
+
+    @Input() set resetSearchValueFromOutSide(element: string) {
+        if (element !== undefined) {
+            if (element) {
+                this.resetSearchValueCall(new Event('click'))
+            }
+        }
+    }
+
+    @Input() set deleteElement(element: Array<any>) {
+        this.paginationArray = [];
+        if (element instanceof Array) {
+            element.forEach((e: any) => {
+                this.tableDataSource_.forEach((t: any) => {
+                    if (JSON.stringify(t) == JSON.stringify(e)) {
+                        this.currentSelectedRow = []
+                        this.lastSelectedObject = []
+                    }
+                })
+                this.TableAction = false;
+            })
+        }
+        this.paginateFromComponent(this.currentPageIndex, false, true);
+    }
+
+    @Input() set showLoaderOptional(value: boolean) {
+        this.showLoaderOptional_ = value;
+    }
+
+    totalData_: any;
+
+    @Input() set totalData(value: any) {
+        this.totalData_ = value;
+        this.paginationArray = [];
+        let arrayAgent = [];
+        for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+            arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+            if (x % 5 == 0) {
+                this.paginationArray.push(arrayAgent)
+                arrayAgent = [];
+            }
+        }
+        if (arrayAgent.length > 0) {
+            this.paginationArray.push(arrayAgent)
+        }
+    }
+
+    @Input() set selectedElementIndex(value: Array<any>) {
+        this.selectedElementIndex_ = value;
+        // PRE SELETED ELEMENT CALCULATION STARTS    
+        if (this.selectedElementIndex_.length > 0 && this.tableDataSource_.length > 0) {
+            this.lastSelectedObject = this.selectedElementIndex_;
+            // this.rowCheckedObject.emit({ elem: this.selection.selected, checked: true, totalSelection: this.selection.selected })
+        }
+        // PRE SELETED ELEMENT CALCULATION ENDS
+    }
+
+    // ALL LOCAL VARIABLES
+    dataSource: MatTableDataSource<any>;
+    selection = new SelectionModel<any>(true, []);
+    immutableDisplayedColumns: Array<any> = [];
+    immutabledataToBeDisplay: Array<any> = [];
+    immutableTableDataSource: Array<any> = [];
+    rowIsSelected: boolean = false;
+    currentSelectedRow: Array<any> = [];
+    TableAction: boolean = false;
+    paginateData: Array<any> = [];
+    immutablePaginateData: Array<any> = [];
+    lastSelectedObject: Array<any> = [];
+    currentPageIndex: number = 1;
+    sortedArray: Array<any> = [];
+    searchParams: string = '';
+    advancedFilterArray: Array<any> = [];
+    showLoader: boolean = false;
+    loaderArray: Array<any> = [1, 2, 3, 4, 5, 6, 7, 8];
+    selectedElementIndex_: Array<any> = [];
+    black: string;
+    currentPageSize: any = 20;
+    activePageIndex: any = 1;
+
+    @Input() isPropertyTableViewPage:boolean = false;
+
+
+    searchState: any = { filterText: '', state: false };
+    filterState: Array<any> = [];
+
+    callFromPaginationButton: boolean = false;
+
+    dataSortingState: Array<any> = [{ normal: [], asc: [], desc: [] }];
+    uploadUrl: string = '';
+    private ngUnsubscribe = new Subject();
+
+    public editPermission: boolean = true;
+
+    config: ExportAsConfig = {
+        type: 'pdf',
+        elementIdOrContent: 'hideDataTable',
+        options: {
+            jsPDF: {
+                orientation: 'landscape'
+            },
+            pdfCallbackFn: this.pdfCallbackFn // to add header and footer
+        }
+    };
+
+    constructor(private dialog: MatDialog, private chdtcRef: ChangeDetectorRef, private global: GlobalService, private uploadFile: UploadFileService,
+        public store: Store<AppState>, private exportAsService: ExportAsService) {
+    }
+
+    exportAsString(type: SupportedExtensions, opt?: string) {
+
+        let tabledata = document.getElementById("hideDataTable").innerHTML;
+
+        this.config.elementIdOrContent = '<table border="1" cellspacing="1" cellpadding="5">' + tabledata + '</table>';
+        this.exportAs(type, opt);
+    }
+
+    exportAs(type: SupportedExtensions, opt?: string) {
+
+        if (type == 'csv') {
+            this.config.elementIdOrContent = 'hideDataTableCSV';
+        }
+        else if (type != 'pdf') {
+            this.config.elementIdOrContent = 'hideDataTable';
+        }
+
+        this.config.type = type;
+        if (opt) {
+            this.config.options.jsPDF.orientation = opt;
+        }
+        this.exportAsService.save(this.config, this.moduleName).subscribe(() => {
+            // save started
+        });
+        // this.exportAsService.get(this.config).subscribe(content => {
+        //   const link = document.createElement('a');
+        //   const fileName = 'export.pdf';
+
+        //   link.href = content;
+        //   link.download = fileName;
+        //   link.click();
+        // });
+    }
+
+    pdfCallbackFn(pdf: any) {
+        // example to add page number as footer to every page of pdf
+        const noOfPages = pdf.internal.getNumberOfPages();
+        for (let i = 1; i <= noOfPages; i++) {
+            pdf.setPage(i);
+            pdf.text('Page ' + i + ' of ' + noOfPages, pdf.internal.pageSize.getWidth() - 100, pdf.internal.pageSize.getHeight() - 30);
+        }
+    }
+
+    paginationSelectForm: FormGroup;
+    ngOnInit(): void {
+        if(this.isPropertyTableViewPage){        
+            this.currentPageSize = 100;
+            this.pageSize = 100;
+        }
+
+        this.paginationSelectForm = new FormGroup({
+            selectPageSize: new FormControl(20)
+        })
+
+        this.uploadUrl = this.uploadFile.bucketUrl;
+        this.currentPageSize = this.pageSize;
+        this.global.globalLoaderShow_
+            .subscribe((loader: any) => {
+                if (this.global.dataTableLoaderTracker) {
+                    this.showLoader = loader;
+                } else {
+                    if (!loader) {
+                        this.showLoader = loader
+                    }
+                }
+            })
+        this.dataSource = new MatTableDataSource(this.tableDataSource_);
+
+        if (this.displayedColumns.indexOf('select') == -1) {
+
+            if (this.showCheckbox) {
+                this.displayedColumns.unshift("select");
+            }
+        }
+        if (this.displayedColumns.indexOf('extraTableAction') == -1) {
+
+            if (this.showExtraTableAction) {
+                this.displayedColumns.push("extraTableAction");
+            }
+        }
+
+
+        this.immutableDisplayedColumns = this.displayedColumns;
+        this.immutabledataToBeDisplay = this.dataToBeDisplay;
+        this.immutableTableDataSource = this.tableDataSource_;
+        this.sortedArray = this.displayedColumns;
+        this.paginateData = this.tableDataSource_.filter((e, i) => {
+            return i < this.pageSize;
+        });
+        this.immutablePaginateData = this.paginateData;
+        // CHECKING FOR SAVED DISPLAYED DATA
+        let localStorageDisplayedColumn = localStorage.getItem('displayedAndSortedColumns');
+        if (localStorageDisplayedColumn && localStorageDisplayedColumn !== "undefined") {
+            let savedLayoutJSON = JSON.parse(localStorageDisplayedColumn);
+            let finalColumnObject: Object = {};
+            for (var x in savedLayoutJSON) {
+                if (x == this.moduleName) {
+                    for (var y in savedLayoutJSON[x]) {
+                        if (savedLayoutJSON[x][y].lastSelected) {
+                            finalColumnObject = savedLayoutJSON[x][y];
+                        }
+                    }
+                }
+            }
+            this.columnFilterFunction(finalColumnObject);
+        }
+    }
+    ngAfterViewInit() {
+        this.dataSource.sort = this.sort;
+        this.dataSource.paginator = this.paginator;
+        if (this.table !== undefined) {
+            this.table.dataSource = this.dataSource;
+        }
+        this.reInitiateDataSource();
+    }
+
+    ngOnChanges(c: SimpleChanges) {
+        if (c.hasOwnProperty('tableDataSource')) {
+            if (this.preSelectedData_.length > 0 && c.tableDataSource.currentValue.length > 0) {
+                if (c.tableDataSource.firstChange && c.tableDataSource.previousValue !== undefined) {
+                    c.tableDataSource.currentValue.forEach((t: any, i: any) => {
+                        this.preSelectedData_.forEach((d: any) => {
+                            if (escape(JSON.stringify(d)) == escape(JSON.stringify(t))) {
+                                this.rowCheck({ checked: true }, t, i)
+                            }
+                        })
+                    })
+                } else {
+                    if (c.tableDataSource.previousValue !== undefined) {
+                        if (JSON.stringify(c.tableDataSource.currentValue[0]) !== JSON.stringify(c.tableDataSource.previousValue[0])) {
+                            c.tableDataSource.currentValue.forEach((t: any, i: any) => {
+                                this.preSelectedData_.forEach((d: any) => {
+                                    if (escape(JSON.stringify(d)) == escape(JSON.stringify(t))) {
+                                        this.rowCheck({ checked: true }, t, i)
+                                    }
+                                })
+                            })
+                        }
+                        else {
+                            c.tableDataSource.currentValue.forEach((t: any, i: any) => {
+                                this.preSelectedData_.forEach((d: any) => {
+                                    if (escape(JSON.stringify(d)) == escape(JSON.stringify(t))) {
+                                        this.rowCheck({ checked: true }, t, i)
+                                    }
+                                })
+                            })
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ngOnDestroy() {
+        this.tableDataSource = [];
+        // this.ngUnsubscribe.next();
+        // this.ngUnsubscribe.complete();
+    }
+
+    rowEdit(elem: any) {
+        this.editRow.emit(this.selection.selected);
+    }
+    shared(elem: any) {
+        this.share.emit(this.selection.selected);
+    }
+    emailed(elem: any) {
+        this.email.emit(this.selection.selected);
+    }
+    rowView(element: any) {
+        event.preventDefault();
+        this.viewRow.emit(element);
+    }
+
+    rowNote(element: any) {
+        event.preventDefault();
+        this.noteRow.emit(element);
+    }
+
+    rowRunAgain(elem: any) {
+        this.runAgainRow.emit(this.selection.selected);
+    }
+
+    isAllSelected() {
+        const numSelected = this.selection.selected.length;
+        // const numRows = this.tableDataSource.length;
+        const numRows = this.paginateData.length;
+        return numSelected === numRows;
+    }
+    masterToggle(event: any, fromComponent: boolean) {
+        let sel = [];
+        if (event.checked) {
+            this.selection.clear();
+            this.tableDataSource_.forEach((elem: any, i: any) => {
+                this.selection.select(elem)
+                this.currentSelectedRow.push(elem);
+                sel.push({ elem, i })
+            });
+            if (!fromComponent) {
+                // PUSH CURRENT PAGE INDEX AND ALL CURRENT SELECTION IN lastSelectedObject ARRAY
+                this.lastSelectedObject.push({ pageIndex: this.currentPageIndex, selection: sel })
+            }
+        } else {
+            // EMPTY SELECTION
+            this.selection.clear();
+            // EMPTY currentSelectedRow
+            this.currentSelectedRow = [];
+            if (!fromComponent) {
+                // REMOVE ALL SELECTION OF CURRENT INDEXED PAGE FROM lastSelectedObject ARRAY
+                this.lastSelectedObject = this.lastSelectedObject.filter((elem) => {
+                    return elem.pageIndex !== this.currentPageIndex;
+                });
+            }
+        }
+        this.TableAction = event.checked;
+        this.rowCheckedObject.emit({ elem: this.selection.selected, checked: event.checked, totalSelection: this.selection.selected, allSelection: this.lastSelectedObject })
+
+        this.selectedRow = this.selection.selected;
+    }
+    rowCheck(event, elem: any, i: any) {
+        if (!this.multipleSelect) {
+            this.masterToggle({ checked: false }, false);
+        }
+        if (event.checked) {
+            // Track the index
+            this.currentSelectedRow.push(elem);
+            this.selection.select(elem);
+            // this.lastSelectedObject.push({ pageIndex: this.currentPageIndex, selection: this.currentSelectedRow })
+            let hasIndex: boolean = false;
+            let index: number;
+            this.lastSelectedObject.forEach((e, i) => {
+                if (e.pageIndex == this.currentPageIndex) {
+                    hasIndex = true;
+                    index = i;
+                    return false;
+                }
+            })
+            if (hasIndex) {
+                // this.currentSelectedRow.forEach((a) => {
+                if (this.lastSelectedObject[index].selection.indexOf({ elem, i }) == -1) {
+                    this.lastSelectedObject[index].selection.push({ elem, i })
+                }
+                // })
+            } else {
+                let selection = [];
+                selection.push({ elem, i });
+                this.lastSelectedObject.push({ pageIndex: this.currentPageIndex, selection })
+            }
+        } else {
+            this.selection.deselect(elem);
+            if (this.currentSelectedRow.indexOf(elem) !== -1) {
+                this.currentSelectedRow.splice(this.currentSelectedRow.indexOf(elem), 1);
+            }
+            // REMOVING SELECTION ROW FROM SELECTION ARRAY OF lastSelectedObject IF ANY ROW IS DESELECT 
+            this.lastSelectedObject.forEach((e) => {
+                if (e.pageIndex == this.activePageIndex) {
+                    e.selection.forEach((element, i) => {
+                        if (JSON.stringify(element.elem) == JSON.stringify(elem)) {
+                            e.selection = e.selection.filter((d, ind) => {
+                                return ind !== i;
+                            })
+                        }
+                        // return element.elem !== elem;
+                    })
+                }
+            })
+
+        }
+        // let obj = { checked: event.checked, element: elem };
+        // this.rowSelection.emit(obj);
+        if (this.currentSelectedRow.length > 0 && !this.noTableAction) {
+            this.TableAction = true;
+        } else {
+            this.TableAction = false;
+        }
+        this.rowCheckedObject.emit({ elem, checked: event.checked, totalSelection: this.selection.selected, allSelection: this.lastSelectedObject })
+
+        this.selectedRow = this.selection.selected;
+    }
+
+
+    setFlagSelected = [];
+    setFlag(event, elem: any, i: any) {
+        this.setFlagSelected = [];
+        this.setFlagSelected.push(elem);
+        if (elem.flag == "Flag") {
+            this.tableAction({ action: 'noflag' })
+        }
+        else {
+            this.tableAction({ action: 'flag' })
+        }
+        return false;
+    }
+
+    checkboxLabel(row?: any): string {
+        if (!row) {
+            return `${this.isAllSelected() ? 'select' : 'deselect'} all`;
+        }
+        return `${this.selection.isSelected(row) ? 'deselect' : 'select'} row ${row.position + 1}`;
+    }
+    closeEditNavigation() {
+        this.rowIsSelected = false;
+        this.masterToggle({ event: false }, false)
+    }
+    // Function for Search
+    applyFilter(searchParams: string) {
+        this.callFromPaginationButton = false;
+        this.searchState.filterText = searchParams;
+        this.searchState.state = true;
+        this.search.emit({ filterText: searchParams, removeFilter: false, pageSize: this.currentPageSize });
+    }
+    paginateOnDOMClick(pageIndex: any, selectPageSize: boolean, fetchData: boolean, fromSelect: boolean) {
+        this.currentPaginationStackIndex = Math.ceil(pageIndex / 5)
+        let arrayAgent = []
+        if (!fromSelect) {
+            if (this.currentPageIndex !== pageIndex) {
+                this.callFromPaginationButton = true;
+                this.paginationArray = [];
+                let offset = 0;
+                if (selectPageSize) {
+                    offset = 0;
+                    if (this.totalData_ >= this.currentPageSize) {
+                        for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+                            arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+                            if (x % 5 == 0) {
+                                this.paginationArray.push(arrayAgent)
+                                arrayAgent = [];
+                            }
+                        }
+                        if (arrayAgent.length > 0) {
+                            this.paginationArray.push(arrayAgent)
+                        }
+                    } else {
+                        this.paginationArray = [];
+                    }
+                } else {
+
+                    if (this.currentPageSize < this.totalData_) {
+                        offset = (this.currentPageSize * (pageIndex - 1));
+                        for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+                            arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+                            if (x % 5 == 0) {
+                                this.paginationArray.push(arrayAgent)
+                                arrayAgent = [];
+                            }
+                        }
+                        if (arrayAgent.length > 0) {
+                            this.paginationArray.push(arrayAgent)
+                        }
+                    } else {
+                        pageIndex = 0;
+                        this.paginationArray = [];
+                    }
+                }
+                this.currentPageIndex = pageIndex;
+                let object = { pageSize: this.currentPageSize, pageIndex, offset, fetchData, searchState: this.searchState, filterState: this.filterState };
+                this.activePageIndex = pageIndex;
+                this.paginatePage.emit(object);
+            }
+        } else {
+            this.lastSelectedObject = [];
+            this.callFromPaginationButton = true;
+            this.paginationArray = [];
+            let offset = 0;
+            if (selectPageSize) {
+                offset = 0;
+                if (this.totalData_ >= this.currentPageSize) {
+                    for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+                        arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+                        if (x % 5 == 0) {
+                            this.paginationArray.push(arrayAgent)
+                            arrayAgent = [];
+                        }
+                    }
+                    if (arrayAgent.length > 0) {
+                        this.paginationArray.push(arrayAgent)
+                    }
+                } else {
+                    this.paginationArray = [];
+                }
+            } else {
+
+                if (this.currentPageSize < this.totalData_) {
+                    offset = (this.currentPageSize * (pageIndex - 1));
+                    for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+                        arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+                        if (x % 5 == 0) {
+                            this.paginationArray.push(arrayAgent)
+                            arrayAgent = [];
+                        }
+                    }
+                    if (arrayAgent.length > 0) {
+                        this.paginationArray.push(arrayAgent)
+                    }
+                } else {
+                    pageIndex = 0;
+                    this.paginationArray = [];
+                }
+            }
+            this.currentPageIndex = pageIndex;
+            let object = { pageSize: this.currentPageSize, pageIndex, offset, fetchData, searchState: this.searchState, filterState: this.filterState };
+            this.activePageIndex = pageIndex;
+            this.paginatePage.emit(object);
+        }
+    }
+    paginateFromComponent(pageIndex: any, selectPageSize: boolean, fetchData: boolean) {
+        this.paginationArray = [];
+        let arrayAgent = [];
+        let offset = 0;
+        if (pageIndex > 1) {
+            offset = this.currentPageSize * (pageIndex - 1);
+        }
+        if (selectPageSize) {
+            if (this.totalData_ >= this.currentPageSize) {
+                for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+                    arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+                    if (x % 5 == 0) {
+                        this.paginationArray.push(arrayAgent)
+                        arrayAgent = [];
+                    }
+                }
+                if (arrayAgent.length > 0) {
+                    this.paginationArray.push(arrayAgent)
+                }
+            } else {
+                this.paginationArray = [];
+            }
+        } else {
+            if (this.currentPageSize < this.totalData_) {
+                offset = (this.currentPageSize * (pageIndex - 1));
+                if (offset < 0) {
+                    offset = 0
+                }
+                for (var x = 1; x <= Math.ceil(this.totalData_ / this.currentPageSize); x++) {
+                    arrayAgent.push({ index: x, stackIndex: Math.ceil(x / 5) });
+                    if (x % 5 == 0) {
+                        this.paginationArray.push(arrayAgent)
+                        arrayAgent = [];
+                    }
+                }
+                if (arrayAgent.length > 0) {
+                    this.paginationArray.push(arrayAgent)
+                }
+            } else {
+                pageIndex = 1;
+                this.paginationArray = [];
+            }
+        }
+        this.currentPageIndex = pageIndex;
+        let object = { pageSize: this.currentPageSize, pageIndex, offset, fetchData, searchState: this.searchState, filterState: this.filterState };
+        this.activePageIndex = pageIndex;
+        this.paginatePage.emit(object);
+    }
+    closeTableAction(event: any) {
+        this.TableAction = false;
+        this.masterToggle({ checked: false }, false);
+    }
+    selectAll(event: any) {
+        this.masterToggle({ checked: true }, false)
+    }
+    columnFilterFunction(result) {
+        if (result.status == 'save') {
+            if (this.showCheckbox) {
+                result.displayedColumn.unshift('select');
+            }
+            if (this.showExtraTableAction) {
+                result.displayedColumn.push('extraTableAction');
+            }
+            this.displayedColumns = this.immutableDisplayedColumns;
+            this.dataToBeDisplay = this.immutabledataToBeDisplay;
+            let dataDisplay: Array<any> = [];
+            if (result.displayedColumn.length > 0) {
+                result.displayedColumn.forEach((e, i) => {
+                    let index = this.displayedColumns.indexOf(e) - 1;
+                    if (e !== 'select' && e !== 'extraTableAction') {
+                        dataDisplay.push(this.dataToBeDisplay[index]);
+                    }
+                })
+                this.displayedColumns = result.displayedColumn;
+                this.dataToBeDisplay = dataDisplay;
+            }
+            this.sortedArray = result.sortedArray;
+        }
+    }
+    deleteLayoutemit() {
+        // CHECKING FOR SAVED DISPLAYED DATA
+        let localStorageDisplayedColumn = localStorage.getItem('displayedAndSortedColumns');
+        if (localStorageDisplayedColumn && localStorageDisplayedColumn !== "undefined") {
+            let savedLayoutJSON = JSON.parse(localStorageDisplayedColumn);
+            let finalColumnObject: Object = {};
+            for (var x in savedLayoutJSON) {
+                if (x == this.moduleName) {
+                    for (var y in savedLayoutJSON[x]) {
+                        if (savedLayoutJSON[x][y].lastSelected) {
+                            finalColumnObject = savedLayoutJSON[x][y];
+                        }
+                    }
+                }
+            }
+            this.columnFilterFunction(finalColumnObject);
+        }
+    }
+    filter(filterObject: any) {
+        if (filterObject.hasOwnProperty('filterArray')) {
+            this.filterState = filterObject.filterArray;
+        } else {
+            this.filterState = [];
+        }
+        this.filterData.emit(filterObject);
+        this.callFromPaginationButton = false;
+    }
+    filterDataByRequetedParams(filterObject: any): Array<any> {
+        let filterData: Array<any> = [];
+        if (filterObject.operators.labelName.toLowerCase().replace(/\s/g, '') == 'equals') {
+            if (filterObject.removeFilter) {
+            } else if (filterObject.addFilter) {
+                filterData = this.immutablePaginateData.filter((elem) => {
+                    return elem['' + this.immutableDisplayedColumns[this.immutableDisplayedColumns.indexOf(filterObject.filterColumn) + '']] == filterObject.filterText;
+                });
+            }
+        }
+        return filterData;
+    }
+    openColumnSetting(event: any) {
+        let dialogRef: MatDialogRef<ColumnSectionComponent>;
+        // CHECKING IF USERS IS OPENING ANY SAVED LAYOUT OR ADDING LAYOUT.HERE EVENT RESPRESENTS LAYOUT NAME.IF EVENT IS NULL, THEN USER IS ADDING NEW LAYOUT.
+        if (event.length > 0) {
+            dialogRef = this.dialog.open(ColumnSectionComponent, {
+                panelClass: 'column-pop',
+                data: { column: this.immutableDisplayedColumns, visibleColumn: this.displayedColumns, sortedArray: this.sortedArray, layoutName: event, moduleName: this.moduleName },
+                disableClose: true
+            })
+        } else {
+            dialogRef = this.dialog.open(ColumnSectionComponent, {
+                panelClass: 'column-pop',
+                data: { column: this.immutableDisplayedColumns, visibleColumn: this.immutableDisplayedColumns, sortedArray: this.immutableDisplayedColumns, layoutName: event, moduleName: this.moduleName },
+                disableClose: true
+            })
+        }
+        dialogRef.afterClosed()
+            .subscribe((result) => {
+                this.columnFilterFunction(result);
+            })
+    }
+    innerPage() {
+        this.goInnerPage.emit('');
+    }
+    tableAction(event: any) {
+        let dialogRef: MatDialogRef<any>;
+        if (event.action === 'active') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to activate it ?', showConfirmation: true } });
+        } else if (event.action === 'inactive') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to inactivate it ?', showConfirmation: true } });
+        } else if (event.action === 'delete') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to delete it ?', showConfirmation: true } });
+        } else if (event.action === 'csvExport') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to export it in csv ?', showConfirmation: true } });
+        } else if (event.action === 'excelExport') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to export it in excel ?', showConfirmation: true } });
+        } else if (event.action === 'pdfExport') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to export it in pdf ?', showConfirmation: true } });
+        } else if (event.action === 'cold') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to change importance to cold ?', showConfirmation: true } });
+        } else if (event.action === 'warm') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to change importance to warm ?', showConfirmation: true } });
+        } else if (event.action === 'hot') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to change importance to hot ?', showConfirmation: true } });
+        } else if (event.action === 'tag') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to tag it ?', showConfirmation: true } });
+        } else if (event.action === 'notag') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to untag it ?', showConfirmation: true } });
+        } else if (event.action === 'flag') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to flag it ?', showConfirmation: true } });
+        } else if (event.action === 'noflag') {
+            dialogRef = this.dialog.open(AlertBoxComponent, { data: { textContent: 'Are you sure you want to unflag it ?', showConfirmation: true } });
+        }
+
+
+
+        dialogRef.afterClosed()
+            .subscribe((result) => {
+                if (event.action === 'active' && result.status) {
+                    this.activate.emit(this.selection.selected);
+                } else if (event.action === 'inactive' && result.status) {
+                    this.deactivate.emit(this.selection.selected);
+                } else if (event.action === 'delete' && result.status) {
+                    this.delete.emit(this.selection.selected);
+                } else if (event.action === 'csvExport' && result.status) {
+                    //this.delete.emit(this.selection.selected);
+                    this.exportAs('csv')
+                } else if (event.action === 'excelExport' && result.status) {
+                    //this.delete.emit(this.selection.selected);
+                    this.exportAs('xlsx')
+                } else if (event.action === 'pdfExport' && result.status) {
+                    //this.delete.emit(this.selection.selected);
+                    this.exportAsString('pdf', 'landscape');
+                } else if (event.action === 'cold' && result.status) {
+                    this.cold.emit(this.selection.selected);
+                } else if (event.action === 'warm' && result.status) {
+                    this.warm.emit(this.selection.selected);
+                } else if (event.action === 'hot' && result.status) {
+                    this.hot.emit(this.selection.selected);
+                } else if (event.action === 'tag' && result.status) {
+                    this.tag.emit(this.selection.selected);
+                } else if (event.action === 'notag' && result.status) {
+                    this.notag.emit(this.selection.selected);
+                } else if (event.action === 'flag' && result.status) {
+                    this.flag.emit(this.setFlagSelected);
+                } else if (event.action === 'noflag' && result.status) {
+                    this.noflag.emit(this.setFlagSelected);
+                }
+            })
+    }
+    selectColumnVisibility(layout: string) {
+        let savedLayout = localStorage.getItem('displayedAndSortedColumns');
+        if (savedLayout && savedLayout !== "undefined") {
+            let savedLayoutJSON = JSON.parse(savedLayout);
+            for (var x in savedLayoutJSON['' + this.moduleName + '']) {
+                if (x == layout) {
+                    savedLayoutJSON['' + this.moduleName + ''][x]['lastSelected'] = true;
+                } else {
+                    savedLayoutJSON['' + this.moduleName + ''][x]['lastSelected'] = false;
+                }
+            }
+            localStorage.setItem('displayedAndSortedColumns', JSON.stringify(savedLayoutJSON))
+            let finalColumnObject = { displayedColumn: savedLayoutJSON['' + this.moduleName + '']['' + layout + '']['displayedColumn'], sortedArray: savedLayoutJSON['' + this.moduleName + '']['' + layout + '']['sortedArray'], status: 'save', lastSelected: true };
+            this.columnFilterFunction(finalColumnObject);
+        } else {
+
+        }
+    }
+    reInitiateDataSource() {
+        this.dataSource = new MatTableDataSource(this.tableDataSource_);
+        this.chdtcRef.detectChanges();
+        this.dataSource.sort = this.sort;
+        if (this.table !== undefined) {
+            this.table.dataSource = this.dataSource;
+        }
+    }
+    resetSearchValueCall(event: any) {
+        this.searchState.filterText = '';
+        this.searchState.state = false;
+        this.resetSearchValue.emit('');
+    }
+    closeFilterMenu() {
+        this.filter({ filterArray: [] });
+    }
+
+    resetSearchState() {
+        this.searchState = { filterText: '', state: false }
+    }
+
+    resetFilterState() {
+    }
+
+    routerLinkClick(event: any, element: any) {
+        event.preventDefault();
+        this.masterToggle({ checked: false }, false);
+        this.selection.select(element);
+        this.rowEdit(event);
+        this.shared(event);
+        this.emailed(event);
+    }
+
+    onSortData(sort: MatSort) {
+        let data = this.tableDataSource_.slice();
+
+        if (sort.active && sort.direction !== '') {
+            data = data.sort((a: Element, b: Element) => {
+                const isAsc = sort.direction === 'asc';
+                return this.compare(a['' + this.dataToBeDisplay[this.displayedColumns.indexOf(sort.active) - 1] + ''], b['' + this.dataToBeDisplay[this.displayedColumns.indexOf(sort.active) - 1] + ''], isAsc)
+            });
+            this.tableDataSource_ = data;
+            this.reInitiateDataSource();
+        } else if (sort.direction == '') {
+            this.tableDataSource_ = this.dataSortingState[0]['normal'];
+            this.reInitiateDataSource();
+        }
+    }
+    private compare(a, b, isAsc) {
+        return (a < b ? -1 : 1) * (isAsc ? 1 : -1);
+    }
+
+    removeItem(index: any) {
+        this.removeItemEmit.emit(index);
+    }
+
+    emitSetStatus(event: any, elem: any) {
+        this.setStatus.emit({ value: event.target.checked, elem });
+    }
+    typeOf(data) {
+        return typeof (data);
+    }
+
+    urlEncode(str: any) {
+        return this.global.getEncode(str);
+    }
+
+    getFlyerEmitterFunction(event:any){           
+        this.getFlyerEmitter.emit(event);
+    }
+
+}
