@@ -1,0 +1,177 @@
+<div class="web-action">
+    <div class="view-select">{{selectionLength}} selected (or <span (click)="selectAllFunction()">select all
+            {{totalDataLength}}</span>)</div>
+    <ng-container *ngIf="selectionLength == 1">
+        <!-- <button mat-button aria-label="View">
+            <i class="icon-searcher1" matPrefix></i>View
+        </button> -->
+        <button mat-button aria-label="Edit" *ngIf="showEdit" (click)="editRow()">
+            <i class="icon-edit"></i>Edit
+        </button>
+
+        <button mat-button aria-label="Run Again" (click)="runAgainRow()" *ngIf="showRunAgain">
+            <i class="icon-megaphone"></i>Run Again
+        </button>
+
+    </ng-container>
+    <ng-container *ngIf="showActiveInactive">
+        <button mat-button aria-label="Activate" *ngIf="showActivate" (click)="emitAction({action:'active'})">
+            <i class="icon-unlock"></i>Activate
+        </button>
+        <button mat-button aria-label="Deactivate" *ngIf="showDeactivate" (click)="emitAction({action:'inactive'})">
+            <i class="icon-lock"></i>Deactivate
+        </button>
+    </ng-container>
+    <ng-container *ngIf="showDelete == true">
+        <button mat-button aria-label="Delete" (click)="emitAction({action:'delete'})">
+            <i class="icon-bin"></i>Delete
+        </button>
+    </ng-container>
+    <button mat-button aria-label="Export" [matMenuTriggerFor]="export" *ngIf="showExport">
+        <i class="icon-export"></i>Export
+    </button>
+    <mat-menu #export="matMenu">
+        <button mat-menu-item (click)="emitAction({action:'csvExport'})">CSV</button>
+        <button mat-menu-item (click)="emitAction({action:'excelExport'})">Excel</button>
+        <button mat-menu-item (click)="emitAction({action:'pdfExport'})">PDF</button>
+    </mat-menu>
+
+    <button mat-button aria-label="Transfer" *ngIf="showTransfer" (click)="emitAction({action:'transfer'})">
+        <i class="icon-transfer"></i>Transfer
+    </button>
+    <button mat-button aria-label="Clone" *ngIf="showClone" (click)="emitAction({action:'clone'})">
+        <i class="icon-clone"></i>Clone
+    </button>
+    <button mat-button aria-label="Email" *ngIf="showEmail" (click)="email()">
+        <i class="icon-email"></i>Email
+    </button>
+
+    <ng-container *ngIf="selectionLength == 1">
+        <button mat-button aria-label="Share" *ngIf="showShare" (click)="share()">
+            <i class="icon-share"></i>Share
+        </button>
+    </ng-container>
+
+    <ng-container *ngIf="showImportance">
+        <button mat-button aria-label="Cold" (click)="emitAction({action:'cold'})"><i class="icon-cold"></i>Cold
+        </button>
+        <button mat-button aria-label="Warm" (click)="emitAction({action:'warm'})"><i class="icon-warm"></i>Warm
+        </button>
+        <button mat-button aria-label="Hot" (click)="emitAction({action:'hot'})"><i class="icon-hot"></i>Hot
+        </button>
+    </ng-container>
+
+    <ng-container *ngIf="showTag">
+        <button mat-button aria-label="Tag" (click)="emitAction({action:'tag'})">
+            <i class="icon-tag"></i>Tag
+        </button>
+        <button mat-button aria-label="No Tag" (click)="emitAction({action:'notag'})">
+            <i class="icon-tag"></i>No Tag
+        </button>
+    </ng-container>
+
+    <button mat-icon-button aria-label="close" class="ml-auto" (click)="closeComponent()">
+        <i class="icon-close-1"></i>
+    </button>
+</div>
+<div class="mob-action">
+    <!-- <button mat-icon-button aria-label="View">
+        <i class="icon-searcher1" matPrefix></i>
+    </button> -->
+    <button mat-icon-button aria-label="Edit">
+        <i class="icon-edit"></i>
+    </button>
+    <button mat-icon-button aria-label="Run Again" *ngIf="showRunAgain">
+        <i class="icon-runagain"></i>
+    </button>
+    <ng-container *ngIf="showActiveInactive">
+        <button mat-icon-button aria-label="Activate">
+            <i class="icon-unlock"></i>
+        </button>
+        <button mat-icon-button aria-label="Deactivate">
+            <i class="icon-lock"></i>
+        </button>
+    </ng-container>
+    <button mat-icon-button aria-label="Delete" *ngIf="showDelete"> 
+        <i class="icon-bin"></i>
+    </button>
+    <button mat-icon-button aria-label="Export" [matMenuTriggerFor]="export" *ngIf="showExport"> 
+        <i class="icon-export"></i>
+    </button>
+    <button mat-icon-button aria-label="close" (click)="closeComponent()">
+        <i class="icon-close-1"></i>
+    </button>
+</div>
+
+import { AfterViewInit, Component, OnInit, Inject, ViewChild, Input, Output, EventEmitter } from '@angular/core';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { MatTable } from '@angular/material/table';
+import { MatTableDataSource } from '@angular/material/table';
+import { SelectionModel } from '@angular/cdk/collections';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+
+@Component({
+    selector: 'app-data-table-action',
+    templateUrl: './data-table-action.component.html',
+    styleUrls: ['./data-table-action.component.scss']
+})
+export class DataTableActionComponent implements OnInit {
+    TableAction: boolean;
+
+    @Input() selectionLength: number = 0;
+    @Input() totalDataLength: number = 0;
+    @Input() showActivate: boolean = true;
+    @Input() showDeactivate: boolean = true;
+    @Input() showRunAgain: boolean = false;
+    @Input() showActiveInactive: boolean = true;
+    @Input() showDelete: boolean = true;
+    @Input() showExport: boolean = false;
+    @Input() showTransfer: boolean = false;
+    @Input() showClone: boolean = false;
+    @Input() showEmail: boolean = false;
+    @Input() showShare: boolean = false;
+    @Input() showTag: boolean = false;
+    @Input() showEdit: boolean = true;
+    @Input() showImportance: boolean = false;
+
+    @Output() selectAll: EventEmitter<any> = new EventEmitter();
+    @Output() rowEdit: EventEmitter<any> = new EventEmitter();
+    @Output() shared: EventEmitter<any> = new EventEmitter();
+    @Output() emailed: EventEmitter<any> = new EventEmitter();
+    
+	
+    @Output() rowRunAgain: EventEmitter<any> = new EventEmitter();
+
+    @Output() close: EventEmitter<string> = new EventEmitter();
+    @Output() action: EventEmitter<any> = new EventEmitter();
+    constructor() { }
+
+    ngOnInit(): void {
+    }
+
+    editRow() {
+        this.rowEdit.emit('')
+    }
+    share() {
+        this.shared.emit('')
+    }
+    email() {
+        this.emailed.emit('')
+    }
+    runAgainRow() {
+        this.rowRunAgain.emit('')
+    }
+
+    closeComponent() {
+        this.close.emit("close");
+    }
+    emitAction(event) {
+        this.action.emit(event);
+    }
+    selectAllFunction() {
+        this.selectAll.emit('selectall');
+    }
+
+}
