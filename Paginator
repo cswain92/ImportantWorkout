@@ -1,0 +1,18 @@
+  <ng-container *ngIf="immutablePropertyData !== undefined">
+        <mat-paginator [length]="immutablePropertyData.length" [pageSize]="5" [pageSizeOptions]="[5, 10, 25, 100]"
+            (page)="comparablePaginate($event)">
+        </mat-paginator>
+    </ng-container>
+    
+    
+      comparablePaginate(event: any) {
+    this.currentcomparablesPageIndex = event.pageIndex;
+    this.currentcomparablesPageSize = event.pageSize;
+    this.propertyData = [];
+    this.propertyData = this.immutablePropertyData.filter((ic: any, i: any) => {
+      if (i >= this.currentcomparablesPageIndex * this.currentcomparablesPageSize && i < this.currentcomparablesPageSize * (this.currentcomparablesPageIndex + 1)) {
+        return true
+      }
+      return false;
+    })
+  }
