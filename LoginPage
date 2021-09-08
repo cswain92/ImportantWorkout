@@ -378,3 +378,189 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
 
 }
+
+<--- Store ------->
+1. Action
+import { LoginCredential } from "../models/login.model";
+import { Action } from '@ngrx/store';
+
+// Differents Action types
+export enum LoginActionTypes {
+    FETCH_CREDENTIAL = '[LOGIN] Credential Fetch',
+    FETCH_CREDENTIAL_SUCCESS = '[LOGIN] Credential Success',
+    FETCH_CREDENTIAL_SUCCESS_RESET = 'FETCH_CREDENTIAL_SUCCESS_RESET',
+    FETCH_CREDENTIAL_ERROR = '[LOGIN] Credential Error',
+    GET_CREDENTIAL = '[LOGIN] Get Credential',
+    LOGOUT = 'LOGOUT',
+    LOGIN_STATUS_CLEAR = 'LOGIN_STATUS_CLEAR'
+}
+// For Loading the data
+export class LoginCredentailFetch implements Action {
+    readonly type = LoginActionTypes.FETCH_CREDENTIAL;
+    constructor(public payload: any) { };
+}
+// For Print the data
+export class LoginCredentailSuccess implements Action {
+    readonly type = LoginActionTypes.FETCH_CREDENTIAL_SUCCESS;
+    constructor(public payload: any) { };
+}
+export class LoginCredentailSuccessReset implements Action {
+    readonly type = LoginActionTypes.FETCH_CREDENTIAL_SUCCESS_RESET;
+    constructor() { };
+}
+
+
+export class GetLoginCredentail implements Action {
+    readonly type = LoginActionTypes.GET_CREDENTIAL;
+    constructor(public payload: any) { };
+}
+// If any error for data fetching
+export class LoginCredentialError implements Action {
+    readonly type = LoginActionTypes.FETCH_CREDENTIAL_ERROR;
+    constructor(public payload: Error) { }
+}
+export class Logout implements Action {
+    readonly type = LoginActionTypes.LOGOUT;
+    constructor() { }
+}
+
+export class LoginStatusClear implements Action {
+    readonly type = LoginActionTypes.LOGIN_STATUS_CLEAR;
+    constructor() { }
+}
+
+export type LoginAction =
+    | LoginCredentailFetch
+    | LoginCredentailSuccess
+    | LoginCredentialError
+    | GetLoginCredentail
+    | Logout
+    | LoginStatusClear
+    | LoginCredentailSuccessReset
+    
+   2. Reducer
+   import { LoginCredential } from "../models/login.model";
+import { LoginAction, LoginActionTypes } from "../actions/login.action";
+
+export interface LoginState {
+    credential: LoginCredential[],
+    loading: boolean,
+    error: Error,
+    errorText: string,
+    errorType: string,
+    token: string,
+    userName: string,
+    password: string,
+    success: boolean;
+    successType: string
+}
+
+const initialState: LoginState = {
+    credential: [],
+    loading: false,
+    error: null,
+    errorText: '',
+    errorType: '',
+    token: null,
+    userName: null,
+    password: null,
+    success: null,
+    successType: ''
+}
+export function LoginReducer(
+    state: LoginState = initialState,
+    action: LoginAction
+) {
+    switch (action.type) {
+        case LoginActionTypes.FETCH_CREDENTIAL:
+            return {
+                ...state,
+                loading: true,
+                success: false,
+                successType: ''
+            }
+        case LoginActionTypes.FETCH_CREDENTIAL_SUCCESS:
+
+            Object.assign(state, {
+                token: action.payload.key,
+                error: false,
+                success: true,
+                successType: action.type
+            })
+            return {
+                ...state
+            }
+        case LoginActionTypes.FETCH_CREDENTIAL_SUCCESS_RESET:
+            return { ...state, success: false, successType: '' }
+        case LoginActionTypes.GET_CREDENTIAL:
+            Object.assign(state, {
+                token: action.payload.token,
+                error: action.payload.error,
+                success: true,
+                successType: action.type
+            })
+            return {
+                ...state
+            }
+        case LoginActionTypes.LOGOUT:
+            Object.assign(state, {
+                credential: [], token: '', userName: '', password: '', loading: false, success: false,
+                successType: ''
+            });
+            return { ...state }
+        case LoginActionTypes.LOGIN_STATUS_CLEAR:
+            return {
+                ...state, loading: false, success: false, error: false, errorText: '', errorType: '',
+                successType: ''
+            }
+        case LoginActionTypes.FETCH_CREDENTIAL_ERROR:
+            return { ...state, error: true, errorText: action.payload.message, errorType: action.type }
+        default:
+            return state;
+    }
+}
+3. Effects
+import { Injectable } from "@angular/core";
+import { Effect, Actions, ofType } from '@ngrx/effects';
+import { mergeMap, map, catchError } from 'rxjs/operators';
+import { of } from "rxjs";
+import { GlobalService } from '../../service/global.service';
+import { LoginAction, LoginCredentailFetch, LoginActionTypes, LoginCredentailSuccessReset, LoginCredentialError, GetLoginCredentail, LoginCredentailSuccess } from '../actions/login.action';
+
+@Injectable()
+export class LoginEffects {
+
+    // For fetch the API and print the data
+    @Effect() login = this.actions$
+        .pipe(
+            ofType<LoginCredentailFetch>(LoginActionTypes.FETCH_CREDENTIAL),
+            mergeMap((data: any) => this.global.post('/auth/login/', data.payload)
+                .pipe(
+                    map((data: any) => new LoginCredentailSuccess(data),
+                        catchError(error => of(new LoginCredentialError(error)))
+                    ),
+                    catchError(error => of(new LoginCredentialError(error)))
+                )
+            )
+        )
+    @Effect() LoginCredentailSuccessReset = this.actions$
+        .pipe(
+            ofType<LoginCredentailSuccess>(LoginActionTypes.FETCH_CREDENTIAL_SUCCESS),
+            map((data: any) => new LoginCredentailSuccessReset())
+        )
+
+    constructor(private actions$: Actions, private global: GlobalService) { }
+
+}
+4. Model
+export interface LoginCredential {
+    username: string;
+    email: string;
+    password: string
+}
+
+export interface AuthModel {
+    token: string;
+    userName: string;
+    password: string;
+}
